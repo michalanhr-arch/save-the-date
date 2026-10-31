@@ -140,23 +140,6 @@
     img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 
-  /** Speckles of paper colour laid over the script so its ink reads as coloured pencil. */
-  function paintPencilGrain() {
-    const size = 384;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const data = ctx.createImageData(size, size);
-    for (let i = 0; i < data.data.length; i += 4) {
-      const r = Math.random();
-      data.data[i] = 240;
-      data.data[i + 1] = 236;
-      data.data[i + 2] = 226;
-      data.data[i + 3] = r < 0.5 ? 0 : Math.round((r - 0.5) * 420);
-    }
-    ctx.putImageData(data, 0, 0);
-    $('#script-grain-image').setAttribute('href', canvas.toDataURL());
-  }
 
   // ---------- Geometry ----------
 
@@ -235,29 +218,135 @@
 
   // ---------- Intro ----------
 
+  // ---------- Hand-written "Save the Date" ----------
+
   /**
-   * Writes "Save the Date" stroke by stroke: the mask's pen strokes (traced from the glyphs
-   * by tools/handwriting.py, in writing order) are drawn at a steady pen speed.
+   * Draws "Save the Date" on a canvas, revealed stroke by stroke. The pen strokes (traced from the
+   * glyphs by tools/handwriting.py, in writing order) are drawn into a mask that cuts the letters out.
+   * A canvas keeps this smooth on phones, where an animated SVG mask is redrawn slowly.
    */
-  function writeScript(delay, duration) {
-    const strokes = [...document.querySelectorAll('#script-pen path')];
-    const lengths = strokes.map((p) => p.getTotalLength());
-    // Each stroke starts before the previous one ends, so the pen never stalls between them
-    const OVERLAP = 0.3;
-    const speed = (lengths.reduce((a, b) => a + b, 0) * (1 - OVERLAP)) / duration;
-    let at = delay;
-    const anims = strokes.map((path, i) => {
-      const len = lengths[i] + 1;
-      path.style.strokeDasharray = `${len} ${len}`;
-      path.style.strokeDashoffset = String(len);
-      const time = lengths[i] / speed;
-      const anim = path.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-        { duration: time, delay: at, easing: 'linear', fill: 'forwards' });
-      at += time * (1 - OVERLAP);
-      return anim;
+  const script = (() => {
+    const canvas = $('#script');
+    const ctx = canvas.getContext('2d');
+    const pen = document.createElement('canvas');
+    const penCtx = pen.getContext('2d');
+    const source = $('#script-source');
+    const [vx, vy, vw, vh] = source.getAttribute('viewBox').split(/\s+/).map(Number);
+    const glyphs = new Path2D($('#script-glyphs').getAttribute('d'));
+    const brush = Number($('#script-pen').getAttribute('stroke-width'));
+    const strokes = [...source.querySelectorAll('#script-pen path')].map((el) => {
+      const d = el.getAttribute('d');
+      const n = d.match(/-?\d+(\.\d+)?/g).map(Number);
+      let len = 0;
+      for (let i = 2; i < n.length; i += 2) len += Math.hypot(n[i] - n[i - 2], n[i + 1] - n[i - 1]);
+      return { path: new Path2D(d), len };
     });
-    return Promise.all(anims.map((a) => a.finished)).catch(() => {});
-  }
+    canvas.style.aspectRatio = `${vw} / ${vh}`;
+    let grain = null;
+    let progress = 0; // ms into the writing; Infinity once finished
+    let schedule = [];
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const w = Math.round(canvas.clientWidth * dpr);
+      const h = Math.round(w * vh / vw);
+      if (!w || (w === canvas.width && h === canvas.height)) return;
+      canvas.width = pen.width = w;
+      canvas.height = pen.height = h;
+      grain = makeGrain(dpr);
+      draw();
+    }
+
+    /** Paper-tooth speckle, one cell per CSS pixel, that rubs some ink away so it reads as pencil. */
+    function makeGrain(dpr) {
+      const cells = 96;
+      const tile = document.createElement('canvas');
+      tile.width = tile.height = Math.round(cells * dpr);
+      const g = tile.getContext('2d');
+      const step = tile.width / cells;
+      for (let y = 0; y < cells; y++) {
+        for (let x = 0; x < cells; x++) {
+          const r = Math.random();
+          if (r < 0.5) continue;
+          g.fillStyle = `rgba(0,0,0,${((r - 0.5) * 1.4).toFixed(2)})`;
+          g.fillRect(x * step, y * step, Math.ceil(step), Math.ceil(step));
+        }
+      }
+      return ctx.createPattern(tile, 'repeat');
+    }
+
+    function draw() {
+      const { width: w, height: h } = canvas;
+      const k = w / vw;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, w, h);
+      if (progress <= 0) return;
+      ctx.setTransform(k, 0, 0, k, -vx * k, -vy * k);
+      ctx.fillStyle = getComputedStyle(root).getPropertyValue('--accent').trim();
+      ctx.fill(glyphs);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      if (progress !== Infinity) {
+        penCtx.setTransform(1, 0, 0, 1, 0, 0);
+        penCtx.clearRect(0, 0, w, h);
+        penCtx.setTransform(k, 0, 0, k, -vx * k, -vy * k);
+        penCtx.lineWidth = brush;
+        penCtx.lineCap = penCtx.lineJoin = 'round';
+        strokes.forEach((s, i) => {
+          const { start, time } = schedule[i];
+          const f = (progress - start) / time;
+          if (f <= 0) return;
+          penCtx.setLineDash(f >= 1 ? [] : [s.len * f, s.len * 2]);
+          penCtx.stroke(s.path);
+        });
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(pen, 0, 0);
+      }
+
+      if (grain) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = grain;
+        ctx.fillRect(0, 0, w, h);
+      }
+    }
+
+    /** Writes the words over `duration` ms after `delay` ms; each stroke starts before the last one ends. */
+    function write(delay, duration) {
+      const OVERLAP = 0.3;
+      const speed = (strokes.reduce((a, s) => a + s.len, 0) * (1 - OVERLAP)) / duration;
+      let at = 0;
+      schedule = strokes.map((s) => {
+        const time = s.len / speed;
+        const slot = { start: at, time };
+        at += time * (1 - OVERLAP);
+        return slot;
+      });
+      const end = Math.max(...schedule.map((s) => s.start + s.time));
+      return new Promise((resolve) => {
+        const t0 = performance.now() + delay;
+        const tick = (now) => {
+          progress = now - t0;
+          if (progress >= end) {
+            progress = Infinity;
+            draw();
+            resolve();
+            return;
+          }
+          if (progress > 0) draw();
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    }
+
+    function finish() {
+      progress = Infinity;
+      draw();
+    }
+
+    return { resize, write, finish };
+  })();
 
   function playIntro() {
     const ease = 'cubic-bezier(.65,0,.2,1)';
@@ -283,7 +372,7 @@
       { duration: 2800, delay: 2300, easing: ease });
 
     const t = 4700;
-    writeScript(t, 2200).then(() => $('.script__pen').removeAttribute('mask'));
+    anims.push({ finished: script.write(t, 2200) });
     [['.names', 500], ['.tagline', 750]].forEach(([sel, d]) => {
       run($(sel), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
         { duration: 900, delay: t + d, easing: easeOut });
@@ -391,9 +480,9 @@
   fillLinks();
   tickCountdown();
   paintPaper();
-  paintPencilGrain();
   measure();
   buildCalendar();
+  script.resize();
 
   let introDone = false;
   let resizeTimer;
@@ -401,6 +490,7 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       measure();
+      script.resize();
       if (introDone) buildCalendar();
     }, 150);
   });
@@ -412,6 +502,7 @@
 
   fontsReady.then(() => {
     if (reducedMotion) {
+      script.finish();
       root.classList.remove('intro-pending');
       introDone = true;
       return;

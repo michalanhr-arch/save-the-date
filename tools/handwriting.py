@@ -1,12 +1,13 @@
-"""Builds the hand-written "Save the Date" SVG used by index.html.
+"""Builds the drawing data for the hand-written "Save the Date" in index.html.
 
 The glyphs come from Priestacy as filled outlines. To animate them as if written
 with a pen, each glyph is rasterised, thinned to its centre line, and the centre
-line is traced into pen strokes in writing order. Those strokes become a mask
-that main.js draws stroke by stroke, revealing the letters underneath.
+line is traced into pen strokes in writing order. main.js draws those strokes
+one by one on a canvas and uses them as a mask that reveals the letters.
 
 Run with a Python that has fonttools, uharfbuzz, scikit-image and numpy:
-    python tools/handwriting.py > assets/save-the-date.svg
+    python tools/handwriting.py
+and paste the printed <svg id="script-source"> over the one in index.html.
 """
 import sys
 from pathlib import Path
@@ -204,30 +205,16 @@ def main():
     vb = f"{minx:.0f} {miny:.0f} {maxx - minx:.0f} {maxy - miny:.0f}"
     brush = thickness / RASTER_SCALE * 1.35
     out = [
-        f'<svg class="script" viewBox="{vb}" role="img" aria-label="{TEXT}">',
-        '  <defs>',
-        # The default mask region is measured from 0,0, not from the viewBox, and would crop the glyphs
-        f'    <mask id="script-pen" maskUnits="userSpaceOnUse" x="{minx - brush:.0f}" y="{miny - brush:.0f}" '
-        f'width="{maxx - minx + 2 * brush:.0f}" height="{maxy - miny + 2 * brush:.0f}">',
-        f'      <g fill="none" stroke="#fff" stroke-width="{brush:.0f}" stroke-linecap="round" stroke-linejoin="round">',
+        # Safari ignores the hidden attribute on <svg>, so hide it with an inline style
+        f'<svg id="script-source" viewBox="{vb}" style="display: none" aria-hidden="true">',
+        f'  <path id="script-glyphs" d="{svg_pen.getCommands()}"/>',
+        f'  <g id="script-pen" fill="none" stroke="#fff" stroke-width="{brush:.0f}" stroke-linecap="round" stroke-linejoin="round">',
     ]
     for line in strokes:
         pts = [to_units(p) for p in simplify(line)]
         d = "M" + " L".join(f"{x:.0f} {y:.0f}" for x, y in pts)
-        out.append(f'        <path pathLength="1" d="{d}"/>')
-    out += [
-        '      </g>',
-        '    </mask>',
-        '    <pattern id="script-grain" patternUnits="userSpaceOnUse" width="7000" height="7000">',
-        '      <image id="script-grain-image" width="7000" height="7000"/>',
-        '    </pattern>',
-        '  </defs>',
-        '  <g class="script__pen" mask="url(#script-pen)">',
-        f'    <path id="script-glyphs" class="script__ink" d="{svg_pen.getCommands()}"/>',
-        '    <use href="#script-glyphs" fill="url(#script-grain)"/>',
-        '  </g>',
-        '</svg>',
-    ]
+        out.append(f'    <path d="{d}"/>')
+    out += ['  </g>', '</svg>']
     print("\n".join(out))
     print(f"{len(strokes)} strokes, brush {brush:.0f}", file=sys.stderr)
 

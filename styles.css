@@ -188,12 +188,8 @@ body { overflow: hidden; }
   left: calc(var(--u) * -25);
   top: calc(var(--u) * 2);
   width: calc(var(--u) * 112);
-  height: auto;
-  overflow: visible;
   transform: rotate(-24deg);
 }
-/* Set on the group so the grain <use> can override the colour it inherits */
-.script__pen { fill: var(--accent); }
 
 .names {
   margin-top: calc(var(--u) * 26);
