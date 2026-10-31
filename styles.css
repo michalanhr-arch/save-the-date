@@ -192,7 +192,8 @@ body { overflow: hidden; }
   overflow: visible;
   transform: rotate(-24deg);
 }
-.script__ink { fill: var(--accent); }
+/* Set on the group so the grain <use> can override the colour it inherits */
+.script__pen { fill: var(--accent); }
 
 .names {
   margin-top: calc(var(--u) * 26);
@@ -222,6 +223,10 @@ body { overflow: hidden; }
   font-weight: 400;
   font-variant-numeric: lining-nums;
   letter-spacing: 0.02em;
+}
+.details__hebrew {
+  font-weight: 300;
+  color: var(--ink-soft);
 }
 .details__venue { font-family: var(--font-hebrew); }
 

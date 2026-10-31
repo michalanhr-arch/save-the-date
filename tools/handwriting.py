@@ -218,15 +218,14 @@ def main():
     out += [
         '      </g>',
         '    </mask>',
-        # Graphite on paper: ragged edges, and the paper's tooth showing through the stroke
-        '    <filter id="script-pencil" x="-2%" y="-5%" width="104%" height="110%">',
-        '      <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="4" result="grain"/>',
-        '      <feDisplacementMap in="SourceGraphic" in2="grain" scale="22" xChannelSelector="R" yChannelSelector="G" result="rough"/>',
-        '      <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 3.2 -0.55" result="tooth"/>',
-        '      <feComposite in="rough" in2="tooth" operator="in"/>',
-        '    </filter>',
+        '    <pattern id="script-grain" patternUnits="userSpaceOnUse" width="7000" height="7000">',
+        '      <image id="script-grain-image" width="7000" height="7000"/>',
+        '    </pattern>',
         '  </defs>',
-        f'  <path class="script__ink" mask="url(#script-pen)" filter="url(#script-pencil)" d="{svg_pen.getCommands()}"/>',
+        '  <g class="script__pen" mask="url(#script-pen)">',
+        f'    <path id="script-glyphs" class="script__ink" d="{svg_pen.getCommands()}"/>',
+        '    <use href="#script-glyphs" fill="url(#script-grain)"/>',
+        '  </g>',
         '</svg>',
     ]
     print("\n".join(out))

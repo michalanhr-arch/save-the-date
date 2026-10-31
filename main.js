@@ -5,8 +5,8 @@
   const WEDDING = {
     // Israel is still on summer time (UTC+3) at the end of October 2027
     start: '2027-10-28T19:00:00+03:00',
-    // Until the hour is final, the calendar entry is an all-day event and the hour is not shown
-    timeConfirmed: false,
+    // When false, the calendar entry is an all-day event and the hour is not shown
+    timeConfirmed: true,
     durationHours: 5,
     venue: 'אולם אירועים',
     calendarTitle: 'החתונה של מיכל ונועם',
@@ -59,8 +59,8 @@
 
   function fillDetails() {
     const pad = (n) => String(n).padStart(2, '0');
-    let dateText = `יום ${WEEKDAYS[weddingWeekday]}, ${pad(day)}.${pad(month)}.${year}`;
-    if (WEDDING.timeConfirmed) dateText += `, ${WEDDING.start.slice(11, 16)}`;
+    let dateText = `${WEEKDAYS[weddingWeekday]}, ${pad(day)}.${pad(month)}.${year}`;
+    if (WEDDING.timeConfirmed) dateText += ` | ${WEDDING.start.slice(11, 16)}`;
     $('[data-field="date"]').textContent = dateText;
     $('[data-field="hebrewDate"]').textContent = hebrewDate(weddingDay);
     $('[data-field="venue"]').textContent = WEDDING.venue;
@@ -73,14 +73,15 @@
       ? `${stamp(weddingTime)}/${stamp(weddingTime + WEDDING.durationHours * 3600000)}`
       : `${ymd(weddingDay)}/${ymd(new Date(weddingDay.getTime() + DAY_MS))}`;
     const gcal = new URLSearchParams({
-      action: 'TEMPLATE',
       text: WEDDING.calendarTitle,
       dates,
       location: WEDDING.venue,
       details: WEDDING.calendarDetails,
       ctz: 'Asia/Jerusalem',
     });
-    $('#gcal').href = `https://calendar.google.com/calendar/render?${gcal}`;
+    // render?action=TEMPLATE lands on the agenda in mobile browsers; eventedit opens the new-event form everywhere.
+    // The slash between the dates must stay literal for Google to read them.
+    $('#gcal').href = `https://calendar.google.com/calendar/r/eventedit?${gcal.toString().replace('%2F', '/')}`;
   }
 
   // ---------- Countdown ----------
@@ -126,7 +127,35 @@
       </filter>
       <rect width='100%' height='100%' filter='url(#p)'/>
     </svg>`;
-    root.style.setProperty('--paper-texture', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+    // Bake the filter into a bitmap once; a live SVG filter would be re-rendered on every frame of the zoom
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 840;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) root.style.setProperty('--paper-texture', `url("${URL.createObjectURL(blob)}")`);
+      });
+    };
+    img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }
+
+  /** Speckles of paper colour laid over the script so its ink reads as coloured pencil. */
+  function paintPencilGrain() {
+    const size = 384;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const data = ctx.createImageData(size, size);
+    for (let i = 0; i < data.data.length; i += 4) {
+      const r = Math.random();
+      data.data[i] = 240;
+      data.data[i + 1] = 236;
+      data.data[i + 2] = 226;
+      data.data[i + 3] = r < 0.5 ? 0 : Math.round((r - 0.5) * 420);
+    }
+    ctx.putImageData(data, 0, 0);
+    $('#script-grain-image').setAttribute('href', canvas.toDataURL());
   }
 
   // ---------- Geometry ----------
@@ -254,7 +283,7 @@
       { duration: 2800, delay: 2300, easing: ease });
 
     const t = 4700;
-    writeScript(t, 2200).then(() => $('.script__ink').removeAttribute('mask'));
+    writeScript(t, 2200).then(() => $('.script__pen').removeAttribute('mask'));
     [['.names', 500], ['.tagline', 750]].forEach(([sel, d]) => {
       run($(sel), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
         { duration: 900, delay: t + d, easing: easeOut });
@@ -286,15 +315,22 @@
   let strength = 0;
   let neutral = null;
 
+  let lastX = NaN;
+  let lastY = NaN;
+
   function frame() {
+    requestAnimationFrame(frame);
     shown.x += (tilt.x - shown.x) * 0.08;
     shown.y += (tilt.y - shown.y) * 0.08;
     const k = MAX_SHIFT * strength;
+    // Skip the style writes when nothing visibly moved
+    if (Math.abs(shown.x * k - lastX) < 0.02 && Math.abs(shown.y * k - lastY) < 0.02) return;
+    lastX = shown.x * k;
+    lastY = shown.y * k;
     for (const { el, depth } of layers) {
       // Nearer layers slide against the tilt, the paper slides with it
       el.style.transform = `translate3d(${(-shown.x * depth * k).toFixed(2)}px, ${(-shown.y * depth * k).toFixed(2)}px, 0)`;
     }
-    requestAnimationFrame(frame);
   }
 
   function onOrientation(e) {
@@ -336,7 +372,9 @@
       return;
     }
     // iOS only grants motion access from a tap, so ask on the first touch anywhere on the page
-    const ask = () => {
+    const ask = (e) => {
+      // Never let the permission prompt swallow a tap on the calendar button
+      if (e.target.closest('a')) return;
       document.removeEventListener('touchend', ask);
       document.removeEventListener('click', ask);
       DOE.requestPermission().then((state) => {
@@ -353,6 +391,7 @@
   fillLinks();
   tickCountdown();
   paintPaper();
+  paintPencilGrain();
   measure();
   buildCalendar();
 
