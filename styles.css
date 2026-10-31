@@ -1,0 +1,449 @@
+@font-face {
+  font-family: "Priestacy";
+  src: url("assets/fonts/priestacy.woff2") format("woff2");
+  font-display: block;
+}
+@font-face {
+  font-family: "Alchemist";
+  src: url("assets/fonts/alchemist-light.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alchemist";
+  src: url("assets/fonts/alchemist-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alchemist";
+  src: url("assets/fonts/alchemist-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+/* Latin-only subset: digits and Latin come from Montserrat, Hebrew falls through to Alchemist */
+@font-face {
+  font-family: "Montserrat";
+  src: url("assets/fonts/montserrat.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --paper: #ebe7de;
+  --line: #b3afa5;
+  --line-light: rgba(255, 255, 255, 0.6);
+  --numeral: #aaa69c;
+  --accent: #ea756c;
+  --ink: #4a4321;
+  --ink-soft: #6c6545;
+
+  /* Geometry of the wedding-day cell; main.js overwrites these to fit the screen */
+  --cw: 250px;
+  --ch: 380px;
+  --top: 90px;
+  --u: calc(var(--cw) / 100);
+
+  --font-hebrew: "Alchemist", "Arial Hebrew", sans-serif;
+  --font-mixed: "Montserrat", "Alchemist", sans-serif;
+
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-hebrew);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+body { overflow: hidden; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Stage and depth layers ---------- */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  min-height: 560px;
+}
+
+.paper {
+  position: absolute;
+  inset: -48px;
+  background-color: var(--paper);
+  background-image: var(--paper-texture), radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(120, 108, 80, 0.10));
+  background-size: 420px 420px, 100% 100%;
+  background-blend-mode: multiply, normal;
+}
+
+.zoom,
+.layer {
+  position: absolute;
+  inset: 0;
+}
+
+.zoom { transform-origin: 50% calc(var(--top) + var(--ch) / 2); }
+
+.layer,
+.paper { will-change: transform; }
+
+/* All three layers share this frame, placed exactly over the wedding-day cell */
+.cell-frame {
+  position: absolute;
+  left: calc(50% - var(--cw) / 2);
+  top: var(--top);
+  width: var(--cw);
+  height: var(--ch);
+}
+
+/* ---------- Calendar grid ---------- */
+
+.line {
+  position: absolute;
+  background: var(--line);
+}
+.line--v {
+  width: 1.5px;
+  margin-left: -0.75px;
+  box-shadow: 1px 0 0 var(--line-light);
+  transform-origin: top;
+}
+.line--h {
+  height: 1.5px;
+  margin-top: -0.75px;
+  box-shadow: 0 1px 0 var(--line-light);
+  transform-origin: right;
+}
+
+.day {
+  position: absolute;
+  width: var(--cw);
+  height: var(--ch);
+  padding: calc(var(--u) * 4) calc(var(--u) * 5);
+  font-family: var(--font-mixed);
+  font-weight: 300;
+  font-size: calc(var(--u) * 9.5);
+  line-height: 1;
+  color: var(--numeral);
+  text-align: right;
+}
+.day small {
+  display: block;
+  margin-top: calc(var(--u) * 1.6);
+  font-family: var(--font-hebrew);
+  font-size: calc(var(--u) * 4.4);
+  font-weight: 400;
+}
+.day--other-month { color: #c4c0b6; }
+/* The wedding day reads as a lighter sheet within the grid */
+.day--wedding {
+  color: var(--ink);
+  font-weight: 700;
+  background-color: #f6f3ec;
+  background-image: var(--paper-texture);
+  background-size: 420px 420px;
+  background-blend-mode: multiply;
+}
+
+.trace {
+  position: absolute;
+  inset: 0;
+  width: var(--cw);
+  height: var(--ch);
+  overflow: visible;
+  pointer-events: none;
+}
+.trace path {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+.alive .trace path { animation: trace 6s cubic-bezier(.45, 0, .3, 1) 0.6s infinite; }
+@keyframes trace {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  38% { stroke-dashoffset: 0; opacity: 1; }
+  58% { stroke-dashoffset: 0; opacity: 1; }
+  72%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trace path { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* ---------- Wedding-day card ---------- */
+
+.card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(var(--u) * 20) calc(var(--u) * 7) calc(var(--u) * 7);
+}
+
+.card__title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-weight: inherit;
+}
+
+/* Written on a slant across the cell's left border, like a note added by hand */
+.script {
+  position: absolute;
+  left: calc(var(--u) * -25);
+  top: calc(var(--u) * 2);
+  width: calc(var(--u) * 112);
+  height: auto;
+  overflow: visible;
+  transform: rotate(-24deg);
+}
+.script__ink { fill: var(--accent); }
+
+.names {
+  margin-top: calc(var(--u) * 26);
+  font-size: calc(var(--u) * 18);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.tagline {
+  margin-top: calc(var(--u) * 2.5);
+  font-size: calc(var(--u) * 8);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--ink-soft);
+}
+
+.details {
+  margin: 0;
+  font-family: var(--font-mixed);
+  font-size: calc(var(--u) * 6.2);
+  line-height: 1.45;
+  font-weight: 400;
+}
+.details dd { margin: 0; }
+.details__date {
+  font-weight: 400;
+  font-variant-numeric: lining-nums;
+  letter-spacing: 0.02em;
+}
+.details__venue { font-family: var(--font-hebrew); }
+
+/* ---------- Countdown and actions, in the cell under the wedding day ---------- */
+
+.below {
+  position: absolute;
+  top: calc(100% + var(--u) * 17);
+  inset-inline: 0;
+  padding: 0 calc(var(--u) * 7);
+}
+
+.countdown {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+}
+.countdown__unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: calc(var(--u) * 17);
+}
+.countdown b {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 300;
+  font-size: calc(var(--u) * 11);
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.countdown small {
+  margin-top: calc(var(--u) * 1.5);
+  font-size: calc(var(--u) * 4.6);
+  color: var(--ink-soft);
+}
+
+.countdown-done {
+  margin: 0;
+  font-size: calc(var(--u) * 8);
+  font-weight: 700;
+}
+
+.actions {
+  margin-top: calc(var(--u) * 7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px 0 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  background: rgba(244, 241, 234, 0.55);
+  font-family: var(--font-mixed);
+  font-size: max(14px, calc(var(--u) * 5.6));
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s, color 0.2s;
+}
+.action svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.action:hover,
+.action:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ---------- Doodles ---------- */
+
+.doodles { pointer-events: none; }
+
+.doodle {
+  position: absolute;
+  overflow: visible;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Paths use pathLength="1" so the intro can draw them in with stroke-dashoffset */
+.doodle path { stroke-dasharray: 1 1; }
+/* Idle motion once the intro is over: the ring glints, the glasses clink */
+.alive .ray {
+  transform-box: view-box;
+  transform-origin: 58px 47px;
+  animation: glint 2.4s ease-in-out infinite;
+}
+.alive .ray:nth-of-type(2) { animation-delay: 0.3s; }
+.alive .ray:nth-of-type(3) { animation-delay: 0.6s; }
+.alive .ray:nth-of-type(4) { animation-delay: 0.9s; }
+@keyframes glint {
+  0%, 100% { transform: scale(0.82); opacity: 0.35; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+.alive .glass {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: clink-left 3.2s ease-in-out infinite;
+}
+.alive .glass--right { animation-name: clink-right; }
+@keyframes clink-left {
+  0%, 55%, 100% { transform: rotate(0); }
+  68% { transform: rotate(7deg); }
+  72% { transform: rotate(5deg); }
+  76% { transform: rotate(6.5deg); }
+  88% { transform: rotate(0); }
+}
+@keyframes clink-right {
+  0%, 55%, 100% { transform: rotate(0); }
+  68% { transform: rotate(-7deg); }
+  72% { transform: rotate(-5deg); }
+  76% { transform: rotate(-6.5deg); }
+  88% { transform: rotate(0); }
+}
+.alive .clink {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: clink-burst 3.2s ease-out infinite;
+}
+@keyframes clink-burst {
+  0%, 66% { transform: translateY(6px) scale(0.5); opacity: 0; }
+  71% { transform: translateY(0) scale(1.1); opacity: 1; }
+  86%, 100% { transform: translateY(-3px) scale(1.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alive .ray, .alive .glass, .alive .clink { animation: none; }
+}
+
+.doodle--ring {
+  width: calc(var(--u) * 38);
+  left: calc(var(--u) * -30);
+  top: max(calc(var(--u) * -46), calc(var(--top) * -1 + 4px));
+  transform: rotate(-12deg);
+}
+.doodle--sparkles {
+  width: calc(var(--u) * 11);
+  right: calc(var(--u) * 15);
+  top: calc(var(--u) * 5);
+  stroke-width: 2.2;
+}
+.doodle--heart {
+  width: calc(var(--u) * 10);
+  left: calc(var(--u) * 6);
+  bottom: calc(var(--u) * 8);
+  transform: rotate(-8deg);
+}
+.doodle--glasses {
+  width: calc(var(--u) * 40);
+  left: calc(var(--u) * -24);
+  top: calc(100% + var(--u) * 44);
+  stroke-width: 2.4;
+}
+
+/* ---------- Motion permission hint (iOS) ---------- */
+
+.motion-hint {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--numeral);
+  font: 400 13px var(--font-hebrew);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ---------- Intro: hidden until main.js starts the sequence ---------- */
+
+.intro-pending .zoom { visibility: hidden; }
+
+@media (min-width: 700px) {
+  .action { min-height: 44px; }
+}

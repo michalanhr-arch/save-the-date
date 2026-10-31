@@ -1,0 +1,5 @@
+.DS_Store
+# Original font files stay local; the site uses the subset copies in assets/fonts
+fonts/
+רפרנס.jpg
+__pycache__/
