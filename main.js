@@ -373,7 +373,7 @@
 
     const t = 4700;
     anims.push({ finished: script.write(t, 2200) });
-    [['.names', 500], ['.tagline', 750]].forEach(([sel, d]) => {
+    [['.lead', 500], ['.names', 700]].forEach(([sel, d]) => {
       run($(sel), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
         { duration: 900, delay: t + d, easing: easeOut });
     });

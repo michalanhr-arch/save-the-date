@@ -191,21 +191,22 @@ body { overflow: hidden; }
   transform: rotate(-24deg);
 }
 
+.lead {
+  margin-top: calc(var(--u) * 24);
+  font-size: calc(var(--u) * 8);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--ink-soft);
+}
+
 .names {
-  margin-top: calc(var(--u) * 26);
+  margin-top: calc(var(--u) * 1.5);
   font-size: calc(var(--u) * 18);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.01em;
 }
 
-.tagline {
-  margin-top: calc(var(--u) * 2.5);
-  font-size: calc(var(--u) * 8);
-  font-weight: 300;
-  line-height: 1.1;
-  color: var(--ink-soft);
-}
 
 .details {
   margin: 0;
