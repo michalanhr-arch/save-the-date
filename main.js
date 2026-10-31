@@ -201,17 +201,6 @@
       }
     }
 
-    // A pencil line that keeps tracing the wedding day's border, starting at its number
-    const ns = 'http://www.w3.org/2000/svg';
-    const ring = document.createElementNS(ns, 'svg');
-    ring.setAttribute('class', 'trace');
-    ring.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
-    const path = document.createElementNS(ns, 'path');
-    path.setAttribute('pathLength', '1');
-    path.setAttribute('d', `M${cw} 0H0V${ch}H${cw}Z`);
-    ring.appendChild(path);
-    frag.appendChild(ring);
-
     calendar.replaceChildren(frag);
   }
 
@@ -229,10 +218,11 @@
     const speed = (lengths.reduce((a, b) => a + b, 0) * (1 - OVERLAP)) / duration;
     let at = delay;
     const anims = strokes.map((path, i) => {
-      path.style.strokeDasharray = '1 1';
-      path.style.strokeDashoffset = '1';
+      const len = lengths[i] + 1;
+      path.style.strokeDasharray = `${len} ${len}`;
+      path.style.strokeDashoffset = String(len);
       const time = lengths[i] / speed;
-      const anim = path.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }],
+      const anim = path.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
         { duration: time, delay: at, easing: 'linear', fill: 'forwards' });
       at += time * (1 - OVERLAP);
       return anim;
@@ -274,7 +264,9 @@
     });
     document.querySelectorAll('.doodle').forEach((svg, i) => {
       svg.querySelectorAll('path').forEach((path, j) => {
-        run(path, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }],
+        const len = path.getTotalLength() + 1;
+        path.style.strokeDasharray = `${len} ${len}`;
+        run(path, [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
           { duration: 700, delay: t + 600 + i * 250 + j * 160, easing: 'ease-in-out' });
       });
     });
@@ -343,15 +335,15 @@
       window.addEventListener('deviceorientation', onOrientation);
       return;
     }
-    // iOS only grants motion access from a tap
-    const hint = $('#motion-hint');
-    hint.hidden = false;
+    // iOS only grants motion access from a tap, so ask on the first touch anywhere on the page
     const ask = () => {
+      document.removeEventListener('touchend', ask);
+      document.removeEventListener('click', ask);
       DOE.requestPermission().then((state) => {
         if (state === 'granted') window.addEventListener('deviceorientation', onOrientation);
-      }).catch(() => {}).finally(() => { hint.hidden = true; });
-      document.removeEventListener('click', ask);
+      }).catch(() => {});
     };
+    document.addEventListener('touchend', ask);
     document.addEventListener('click', ask);
   }
 
