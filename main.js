@@ -367,12 +367,23 @@
         { duration: 800, delay: 900 + Math.random() * 1000, easing: 'ease-out' });
     });
 
+    // A faint month heading over the whole-month view, gone as the camera moves in
+    const title = $('#month-title');
+    title.textContent = MONTHS[month - 1];
+    run(title, [
+      { opacity: 0, transform: 'scale(0.96)' },
+      { opacity: 0.75, transform: 'scale(1)', offset: 0.35 },
+      { opacity: 0.75, transform: 'scale(1)', offset: 0.62 },
+      { opacity: 0, transform: 'scale(1.25)' },
+    ], { duration: 3000, delay: 600, easing: 'ease-in-out' });
+
     // The month stays in view long enough to read as a calendar, then the camera closes in on the wedding day
     run($('#zoom'), [{ transform: `scale(${geo.startScale})` }, { transform: 'scale(1)' }],
       { duration: 2800, delay: 2300, easing: ease });
 
     const t = 4700;
-    anims.push({ finished: script.write(t, 2200) });
+    const WRITE = 2200;
+    anims.push({ finished: script.write(t, WRITE) });
     // "The wedding of" and the names are one title, so they arrive together
     document.querySelectorAll('.lead, .names').forEach((el) => {
       run(el, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
@@ -381,12 +392,14 @@
     document.querySelectorAll('.details > div').forEach((el, i) => {
       run(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 800, delay: t + 1000 + i * 150, easing: 'ease-out' });
     });
+    // The doodles wait for the writing to finish, so only one thing is being drawn at a time
+    const doodlesAt = t + WRITE + 200;
     document.querySelectorAll('.doodle').forEach((svg, i) => {
       svg.querySelectorAll('path').forEach((path, j) => {
         const len = path.getTotalLength() + 1;
         path.style.strokeDasharray = `${len} ${len}`;
         run(path, [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-          { duration: 700, delay: t + 600 + i * 250 + j * 160, easing: 'ease-in-out' });
+          { duration: 650, delay: doodlesAt + i * 300 + j * 130, easing: 'ease-in-out' });
       });
     });
     run($('#below'), [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
