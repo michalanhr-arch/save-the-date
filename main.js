@@ -155,7 +155,7 @@
       data.data[i] = 150;
       data.data[i + 1] = 145;
       data.data[i + 2] = 134;
-      data.data[i + 3] = Math.round(255 * (0.35 + Math.random() * 0.65));
+      data.data[i + 3] = Math.round(255 * (0.25 + Math.random() * 0.55));
     }
     ctx.putImageData(data, 0, 0);
     inkGrain = canvas.toDataURL();
@@ -176,8 +176,11 @@
     const belowNeeded = 45 * u + 62;
     const top = Math.round(clamp(vh - ch - belowNeeded, vh * 0.06, vh * 0.2));
     // The intro starts zoomed out far enough to read as a month calendar
-    const startScale = clamp(vw / (4.2 * cw), 0.22, 0.6);
-    Object.assign(geo, { vw, vh, cw, ch, top, startScale });
+    // The month's heading stands on the top line of the week before the wedding, with blank paper above it
+    const titleSize = Math.min(clamp(vw * 0.13, 40, 72), vh * 0.075);
+    const roomForTitle = (top + ch / 2 - titleSize * 1.4) / (1.5 * ch);
+    const startScale = clamp(Math.min(vw / (4.2 * cw), roomForTitle), 0.22, 0.6);
+    Object.assign(geo, { vw, vh, cw, ch, top, startScale, titleSize });
     root.style.setProperty('--cw', `${cw}px`);
     root.style.setProperty('--ch', `${ch}px`);
     root.style.setProperty('--top', `${top}px`);
@@ -189,7 +192,9 @@
 
   /** Draws grid lines and day numbers around the wedding day, enough to fill the zoomed-out view. */
   function buildCalendar() {
-    const { vw, vh, cw, ch, top, startScale } = geo;
+    const { vw, vh, cw, ch, top, startScale, titleSize } = geo;
+    // The calendar page starts at the top of the week before the wedding; above it is the heading
+    const pageTop = -ch;
     // Distance from the cell's centre to the farthest visible edge, in unscaled pixels
     const reachX = vw / 2 / startScale + cw;
     const reachY = Math.max(top + ch / 2, vh - top - ch / 2) / startScale + ch;
@@ -200,38 +205,36 @@
     for (let k = -cols; k <= cols + 1; k++) {
       const line = document.createElement('div');
       line.className = 'line line--v';
-      line.style.cssText = `left:${k * cw}px;top:${ch / 2 - reachY}px;height:${reachY * 2}px`;
+      line.style.cssText = `left:${k * cw}px;top:${pageTop}px;height:${ch / 2 + reachY - pageTop}px`;
       line.dataset.order = String(cols + 1 - k); // right to left
       frag.appendChild(line);
     }
-    for (let k = -rows; k <= rows + 1; k++) {
+    for (let k = -1; k <= rows + 1; k++) {
       const line = document.createElement('div');
       line.className = 'line line--h';
       line.style.cssText = `top:${k * ch}px;left:${cw / 2 - reachX}px;width:${reachX * 2}px`;
-      line.dataset.order = String(k + rows); // top to bottom
+      line.dataset.order = String(k + 1); // top to bottom
       frag.appendChild(line);
     }
 
-    // The month's name sits at the top right of the zoomed-out view, sized for it, and scales with the grid
-    const fontSize = clamp(vw * 0.09, 30, 56) / startScale;
+    // The month's name is set like a printed calendar's heading: right-aligned with the day numbers
+    // of the rightmost column in the zoomed-out view, standing on a grid line. It scales with the grid,
+    // so it simply leaves the frame as the camera closes in.
+    const fontSize = titleSize / startScale;
     const header = document.createElement('div');
     header.className = inkGrain ? 'month-title textured' : 'month-title';
     header.textContent = MONTHS[month - 1];
-    // Keep it clear of the day numbers, which take the top of every row
-    const viewTop = ch / 2 - (top + ch / 2) / startScale + 12 / startScale;
-    const numbers = cw * 0.22;
-    const rowTop = Math.floor(viewTop / ch) * ch;
-    let free = [Math.max(viewTop, rowTop + numbers), rowTop + ch];
-    if (free[1] - free[0] < fontSize * 1.3) free = [rowTop + ch + numbers, rowTop + 2 * ch];
-    const headerY = Math.min(free[0] + fontSize * 0.7, (free[0] + free[1]) / 2);
-    header.style.cssText = `font-size:${fontSize}px;left:${cw / 2 + (vw / 2 - 20) / startScale}px;top:${headerY}px`;
+    const viewRight = cw / 2 + vw / 2 / startScale;
+    const columnEdge = Math.floor((viewRight - 8 / startScale) / cw) * cw;
+    header.style.cssText = `font-size:${fontSize}px;left:${columnEdge - cw * 0.05}px;top:${pageTop - fontSize * 0.25}px`;
+
     // Everything printed on the calendar fades in as one piece, which is far cheaper than ~70 separate fades
     const print = document.createElement('div');
     print.className = 'print';
     print.appendChild(header);
 
     // Weeks run Sunday → Saturday from right to left, so a column's weekday is fixed
-    for (let r = -rows; r <= rows; r++) {
+    for (let r = -1; r <= rows; r++) {
       for (let c = -cols; c <= cols; c++) {
         const weekday = weddingWeekday - c;
         if (weekday < 0 || weekday > 6) continue;

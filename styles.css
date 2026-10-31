@@ -135,13 +135,12 @@ body {
    it simply leaves the frame as the camera closes in on the wedding day */
 .month-title {
   position: absolute;
-  transform: translate(-100%, -50%);
+  transform: translate(-100%, -100%);
   font-family: var(--font-hebrew);
   font-weight: 200;
   line-height: 1;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.16em;
   white-space: nowrap;
-  color: #b6b2a8;
 }
 /* Printed-ink grain (drawn by main.js) showing through the letters */
 .month-title.textured {
