@@ -5,6 +5,12 @@
 }
 @font-face {
   font-family: "Alchemist";
+  src: url("assets/fonts/alchemist-ultralight.woff2") format("woff2");
+  font-weight: 200;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alchemist";
   src: url("assets/fonts/alchemist-light.woff2") format("woff2");
   font-weight: 300;
   font-display: swap;
@@ -104,8 +110,10 @@ body {
 
 .zoom { transform-origin: 50% calc(var(--top) + var(--ch) / 2); }
 
-.layer,
-.paper { will-change: transform; }
+/* Only the hand-drawn layer moves with the tilt, so only it gets its own GPU layer;
+   the zoom wrapper gets one just while the opening plays (see .intro-playing) */
+.layer--tilt { will-change: transform; }
+.intro-playing .zoom { will-change: transform; }
 
 /* Layers are stacked full-screen; only the content itself should catch taps */
 .layer { pointer-events: none; }
@@ -129,10 +137,18 @@ body {
   position: absolute;
   transform: translate(-100%, -50%);
   font-family: var(--font-hebrew);
-  font-weight: 300;
+  font-weight: 200;
   line-height: 1;
+  letter-spacing: 0.3em;
   white-space: nowrap;
-  color: var(--numeral);
+  color: #b6b2a8;
+}
+/* Printed-ink grain (drawn by main.js) showing through the letters */
+.month-title.textured {
+  color: transparent;
+  background: var(--ink-grain) 0 0 / 96px 96px;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .line {

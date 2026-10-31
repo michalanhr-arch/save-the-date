@@ -143,6 +143,25 @@
   }
 
 
+  /** Speckled grey ink, used as a texture inside the month heading's letters. */
+  let inkGrain = null;
+  function paintInkGrain() {
+    const size = 192; // shown at 96px, so one speck per CSS pixel on retina screens
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const data = ctx.createImageData(size, size);
+    for (let i = 0; i < data.data.length; i += 4) {
+      data.data[i] = 150;
+      data.data[i + 1] = 145;
+      data.data[i + 2] = 134;
+      data.data[i + 3] = Math.round(255 * (0.35 + Math.random() * 0.65));
+    }
+    ctx.putImageData(data, 0, 0);
+    inkGrain = canvas.toDataURL();
+    root.style.setProperty('--ink-grain', `url("${inkGrain}")`);
+  }
+
   // ---------- Geometry ----------
 
   const geo = {};
@@ -196,7 +215,7 @@
     // The month's name sits at the top right of the zoomed-out view, sized for it, and scales with the grid
     const fontSize = clamp(vw * 0.09, 30, 56) / startScale;
     const header = document.createElement('div');
-    header.className = 'month-title';
+    header.className = inkGrain ? 'month-title textured' : 'month-title';
     header.textContent = MONTHS[month - 1];
     // Keep it clear of the day numbers, which take the top of every row
     const viewTop = ch / 2 - (top + ch / 2) / startScale + 12 / startScale;
@@ -206,7 +225,10 @@
     if (free[1] - free[0] < fontSize * 1.3) free = [rowTop + ch + numbers, rowTop + 2 * ch];
     const headerY = Math.min(free[0] + fontSize * 0.7, (free[0] + free[1]) / 2);
     header.style.cssText = `font-size:${fontSize}px;left:${cw / 2 + (vw / 2 - 20) / startScale}px;top:${headerY}px`;
-    frag.appendChild(header);
+    // Everything printed on the calendar fades in as one piece, which is far cheaper than ~70 separate fades
+    const print = document.createElement('div');
+    print.className = 'print';
+    print.appendChild(header);
 
     // Weeks run Sunday → Saturday from right to left, so a column's weekday is fixed
     for (let r = -rows; r <= rows; r++) {
@@ -226,10 +248,11 @@
           label.textContent = MONTHS[date.getUTCMonth()];
           cell.appendChild(label);
         }
-        frag.appendChild(cell);
+        print.appendChild(cell);
       }
     }
 
+    frag.appendChild(print);
     calendar.replaceChildren(frag);
   }
 
@@ -373,16 +396,14 @@
 
     calendar.querySelectorAll('.line--v').forEach((el) => {
       run(el, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
-        { duration: 1600, delay: Number(el.dataset.order) * 110, easing: ease });
+        { duration: 1400, delay: Number(el.dataset.order) * 70, easing: ease });
     });
     calendar.querySelectorAll('.line--h').forEach((el) => {
       run(el, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
-        { duration: 1600, delay: 250 + Number(el.dataset.order) * 120, easing: ease });
+        { duration: 1400, delay: 150 + Number(el.dataset.order) * 80, easing: ease });
     });
-    calendar.querySelectorAll('.day, .month-title').forEach((el) => {
-      run(el, [{ opacity: 0 }, { opacity: 1 }],
-        { duration: 800, delay: 900 + Math.random() * 1000, easing: 'ease-out' });
-    });
+    run(calendar.querySelector('.print'), [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 1200, delay: 800, easing: 'ease-out' });
 
     // The month stays in view long enough to read as a calendar, then the camera closes in on the wedding day
     run($('#zoom'), [{ transform: `scale(${geo.startScale})` }, { transform: 'scale(1)' }],
@@ -413,6 +434,7 @@
       { duration: 900, delay: t + 1500, easing: easeOut });
 
     root.classList.remove('intro-pending');
+    root.classList.add('intro-playing');
     return Promise.all(anims.map((a) => a.finished)).catch(() => {});
   }
 
@@ -501,6 +523,7 @@
   fillLinks();
   tickCountdown();
   paintPaper();
+  paintInkGrain();
   measure();
   buildCalendar();
   script.resize();
@@ -529,6 +552,7 @@
       return;
     }
     playIntro().then(() => {
+      root.classList.remove('intro-playing');
       introDone = true;
       root.classList.add('alive');
       startDepth();
