@@ -196,8 +196,14 @@
     const header = document.createElement('div');
     header.className = 'month-title';
     header.textContent = MONTHS[month - 1];
-    header.style.cssText = `font-size:${fontSize}px;left:${cw / 2 + (vw / 2 - 20) / startScale}px;`
-      + `top:${ch / 2 - (top + ch / 2) / startScale + fontSize * 0.9}px`;
+    // Keep it clear of the day numbers, which take the top of every row
+    const viewTop = ch / 2 - (top + ch / 2) / startScale + 12 / startScale;
+    const numbers = cw * 0.22;
+    const rowTop = Math.floor(viewTop / ch) * ch;
+    let free = [Math.max(viewTop, rowTop + numbers), rowTop + ch];
+    if (free[1] - free[0] < fontSize * 1.3) free = [rowTop + ch + numbers, rowTop + 2 * ch];
+    const headerY = Math.min(free[0] + fontSize * 0.7, (free[0] + free[1]) / 2);
+    header.style.cssText = `font-size:${fontSize}px;left:${cw / 2 + (vw / 2 - 20) / startScale}px;top:${headerY}px`;
     frag.appendChild(header);
 
     // Weeks run Sunday → Saturday from right to left, so a column's weekday is fixed
