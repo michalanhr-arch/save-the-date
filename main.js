@@ -143,7 +143,7 @@
     const belowNeeded = 45 * u + 62;
     const top = Math.round(clamp(vh - ch - belowNeeded, vh * 0.06, vh * 0.2));
     // The intro starts zoomed out far enough to read as a month calendar
-    const startScale = clamp(vw / (5.5 * cw), 0.22, 0.6);
+    const startScale = clamp(vw / (4.2 * cw), 0.22, 0.6);
     Object.assign(geo, { vw, vh, cw, ch, top, startScale });
     root.style.setProperty('--cw', `${cw}px`);
     root.style.setProperty('--ch', `${ch}px`);
@@ -238,22 +238,22 @@
 
     calendar.querySelectorAll('.line--v').forEach((el) => {
       run(el, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
-        { duration: 1100, delay: Number(el.dataset.order) * 70, easing: ease });
+        { duration: 1600, delay: Number(el.dataset.order) * 110, easing: ease });
     });
     calendar.querySelectorAll('.line--h').forEach((el) => {
       run(el, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
-        { duration: 1100, delay: 150 + Number(el.dataset.order) * 80, easing: ease });
+        { duration: 1600, delay: 250 + Number(el.dataset.order) * 120, easing: ease });
     });
     calendar.querySelectorAll('.day').forEach((el) => {
       run(el, [{ opacity: 0 }, { opacity: 1 }],
-        { duration: 600, delay: 500 + Math.random() * 700, easing: 'ease-out' });
+        { duration: 800, delay: 900 + Math.random() * 1000, easing: 'ease-out' });
     });
 
-    // The camera closes in on the wedding day while the grid is still drawing
+    // The month stays in view long enough to read as a calendar, then the camera closes in on the wedding day
     run($('#zoom'), [{ transform: `scale(${geo.startScale})` }, { transform: 'scale(1)' }],
-      { duration: 2300, delay: 700, easing: ease });
+      { duration: 2800, delay: 2300, easing: ease });
 
-    const t = 2700;
+    const t = 4700;
     writeScript(t, 2200).then(() => $('.script__ink').removeAttribute('mask'));
     [['.names', 500], ['.tagline', 750]].forEach(([sel, d]) => {
       run($(sel), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
