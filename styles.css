@@ -382,9 +382,9 @@ body { overflow: hidden; }
 .doodle--ring {
   width: calc(var(--u) * 38);
   aspect-ratio: 1;
-  left: calc(var(--u) * -30);
+  right: calc(var(--u) * -30);
   top: max(calc(var(--u) * -46), calc(var(--top) * -1 + 4px));
-  transform: rotate(-12deg);
+  transform: rotate(12deg);
 }
 .doodle--sparkles {
   width: calc(var(--u) * 11);

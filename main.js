@@ -399,7 +399,7 @@
   // ---------- Depth effect ----------
 
   const layers = [...document.querySelectorAll('[data-depth]')].map((el) => ({ el, depth: Number(el.dataset.depth) }));
-  const MAX_SHIFT = 18;
+  const MAX_SHIFT = 14;
   const tilt = { x: 0, y: 0 };
   const shown = { x: 0, y: 0 };
   let strength = 0;
