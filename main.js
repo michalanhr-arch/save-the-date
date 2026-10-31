@@ -7,8 +7,10 @@
     start: '2027-10-28T19:00:00+03:00',
     // When false, the calendar entry is an all-day event and the hour is not shown
     timeConfirmed: true,
-    durationHours: 5,
+    durationHours: 8, // 19:00 until 03:00
     venue: 'אולם אירועים',
+    // The venue's street address, as Google Maps knows it; it goes in the calendar event's location
+    address: '',
     calendarTitle: 'החתונה של מיכל ונועם',
     calendarDetails: 'מיכל ונועם מתחתנים! נתראה שם.',
   };
@@ -75,7 +77,7 @@
     const gcal = new URLSearchParams({
       text: WEDDING.calendarTitle,
       dates,
-      location: WEDDING.venue,
+      location: [WEDDING.venue, WEDDING.address].filter(Boolean).join(', '),
       details: WEDDING.calendarDetails,
       ctz: 'Asia/Jerusalem',
     });

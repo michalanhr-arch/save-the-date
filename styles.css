@@ -62,7 +62,13 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-body { overflow: hidden; }
+body {
+  overflow: hidden;
+  /* An invitation, not a document: no text selection or iOS copy callout on long press */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 
 .sr-only {
   position: absolute;
