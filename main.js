@@ -373,9 +373,10 @@
 
     const t = 4700;
     anims.push({ finished: script.write(t, 2200) });
-    [['.lead', 500], ['.names', 700]].forEach(([sel, d]) => {
-      run($(sel), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
-        { duration: 900, delay: t + d, easing: easeOut });
+    // "The wedding of" and the names are one title, so they arrive together
+    document.querySelectorAll('.lead, .names').forEach((el) => {
+      run(el, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 1000, delay: t + 500, easing: easeOut });
     });
     document.querySelectorAll('.details > div').forEach((el, i) => {
       run(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 800, delay: t + 1000 + i * 150, easing: 'ease-out' });

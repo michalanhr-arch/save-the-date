@@ -192,15 +192,15 @@ body { overflow: hidden; }
 }
 
 .lead {
-  margin-top: calc(var(--u) * 24);
-  font-size: calc(var(--u) * 8);
-  font-weight: 300;
-  line-height: 1.1;
+  margin-top: calc(var(--u) * 29);
+  font-size: calc(var(--u) * 8.5);
+  font-weight: 400;
+  line-height: 1.2;
   color: var(--ink-soft);
 }
 
 .names {
-  margin-top: calc(var(--u) * 1.5);
+  margin-top: calc(var(--u) * 1);
   font-size: calc(var(--u) * 18);
   font-weight: 700;
   line-height: 1;
