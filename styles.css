@@ -324,57 +324,63 @@ body { overflow: hidden; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* Idle motion once the intro is over: the ring glints, the glasses clink */
-.alive .ray {
-  transform-box: view-box;
-  transform-origin: 58px 47px;
-  animation: glint 2.4s ease-in-out infinite;
-}
-.alive .ray:nth-of-type(2) { animation-delay: 0.3s; }
-.alive .ray:nth-of-type(3) { animation-delay: 0.6s; }
-.alive .ray:nth-of-type(4) { animation-delay: 0.9s; }
-@keyframes glint {
-  0%, 100% { transform: scale(0.82); opacity: 0.35; }
-  50% { transform: scale(1.12); opacity: 1; }
+/* Idle motion once the intro is over: the ring glints, the glasses clink.
+   Only whole elements are transformed, so the browser can animate them on the GPU. */
+.doodle--ring > svg,
+.doodle--glasses > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
+.alive .rays {
+  transform-origin: 48% 39%; /* the diamond */
+  animation: glint 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes glint {
+  0%, 100% { transform: scale(0.85); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+/* Each glass pivots on the foot of its stem */
+.glass--left { transform-origin: 20.6% 82.5%; }
+.glass--right { transform-origin: 79.4% 82.5%; }
 .alive .glass {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
   animation: clink-left 3.2s ease-in-out infinite;
+  will-change: transform;
 }
 .alive .glass--right { animation-name: clink-right; }
 @keyframes clink-left {
-  0%, 55%, 100% { transform: rotate(0); }
-  68% { transform: rotate(7deg); }
-  72% { transform: rotate(5deg); }
-  76% { transform: rotate(6.5deg); }
-  88% { transform: rotate(0); }
+  0%, 50%, 100% { transform: rotate(0); }
+  64%, 70% { transform: rotate(7deg); }
+  86% { transform: rotate(0); }
 }
 @keyframes clink-right {
-  0%, 55%, 100% { transform: rotate(0); }
-  68% { transform: rotate(-7deg); }
-  72% { transform: rotate(-5deg); }
-  76% { transform: rotate(-6.5deg); }
-  88% { transform: rotate(0); }
+  0%, 50%, 100% { transform: rotate(0); }
+  64%, 70% { transform: rotate(-7deg); }
+  86% { transform: rotate(0); }
 }
+.clink { transform-origin: 50% 20%; }
 .alive .clink {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
   animation: clink-burst 3.2s ease-out infinite;
+  will-change: transform, opacity;
 }
 @keyframes clink-burst {
-  0%, 66% { transform: translateY(6px) scale(0.5); opacity: 0; }
-  71% { transform: translateY(0) scale(1.1); opacity: 1; }
-  86%, 100% { transform: translateY(-3px) scale(1.2); opacity: 0; }
+  0%, 62% { transform: translateY(4px) scale(0.6); opacity: 0; }
+  67% { transform: translateY(0) scale(1.05); opacity: 1; }
+  84%, 100% { transform: translateY(-3px) scale(1.15); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .alive .ray, .alive .glass, .alive .clink { animation: none; }
+  .alive .rays, .alive .glass, .alive .clink { animation: none; }
 }
 
 .doodle--ring {
   width: calc(var(--u) * 38);
+  aspect-ratio: 1;
   left: calc(var(--u) * -30);
   top: max(calc(var(--u) * -46), calc(var(--top) * -1 + 4px));
   transform: rotate(-12deg);
@@ -393,6 +399,7 @@ body { overflow: hidden; }
 }
 .doodle--glasses {
   width: calc(var(--u) * 40);
+  aspect-ratio: 170 / 150;
   left: calc(var(--u) * -24);
   top: calc(100% + var(--u) * 44);
   stroke-width: 2.4;

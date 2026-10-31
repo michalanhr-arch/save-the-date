@@ -115,17 +115,21 @@
 
       <div class="layer" data-depth="1.1" aria-hidden="true">
         <div class="cell-frame doodles">
-          <!-- Engagement ring -->
-          <svg class="doodle doodle--ring" viewBox="0 0 120 120">
-            <path pathLength="1" d="M58 47c-17-2-33 9-35 27-2 17 11 31 29 32 18 1 33-11 34-28 1-16-11-29-28-31z"/>
-            <path pathLength="1" d="M57 55c-12-1-24 7-25 19-1 12 8 22 21 23 13 1 24-8 25-20 1-12-8-21-21-22z"/>
-            <path pathLength="1" d="M45 47l3-12h20l4 12-14 13z"/>
-            <path pathLength="1" d="M45 47h27M53 35l5 12 5-12M48 47l10 13 10-13"/>
-            <path class="ray" pathLength="1" d="M33 24l-5-8"/>
-            <path class="ray" pathLength="1" d="M58 18v-9"/>
-            <path class="ray" pathLength="1" d="M80 22l5-9"/>
-            <path class="ray" pathLength="1" d="M90 33l9-4"/>
-          </svg>
+          <!-- Engagement ring; its rays are a separate element so their glint is composited -->
+          <div class="doodle doodle--ring">
+            <svg viewBox="0 0 120 120">
+              <path pathLength="1" d="M58 47c-17-2-33 9-35 27-2 17 11 31 29 32 18 1 33-11 34-28 1-16-11-29-28-31z"/>
+              <path pathLength="1" d="M57 55c-12-1-24 7-25 19-1 12 8 22 21 23 13 1 24-8 25-20 1-12-8-21-21-22z"/>
+              <path pathLength="1" d="M45 47l3-12h20l4 12-14 13z"/>
+              <path pathLength="1" d="M45 47h27M53 35l5 12 5-12M48 47l10 13 10-13"/>
+            </svg>
+            <svg class="rays" viewBox="0 0 120 120">
+              <path pathLength="1" d="M33 24l-5-8"/>
+              <path pathLength="1" d="M58 18v-9"/>
+              <path pathLength="1" d="M80 22l5-9"/>
+              <path pathLength="1" d="M90 33l9-4"/>
+            </svg>
+          </div>
           <!-- Sparkles beside the title -->
           <svg class="doodle doodle--sparkles" viewBox="0 0 60 70">
             <path pathLength="1" d="M22 4c1 13 5 18 17 20-12 2-16 7-17 20-1-13-5-18-17-20 12-2 16-7 17-20z"/>
@@ -135,24 +139,30 @@
           <svg class="doodle doodle--heart" viewBox="0 0 44 44">
             <path pathLength="1" d="M22 38C10 28 4 20 7 12c3-7 12-7 15 2 3-9 12-9 15-2 3 8-4 16-15 26-2-3-4-4-6-4"/>
           </svg>
-          <!-- Two coupes clinking -->
-          <svg class="doodle doodle--glasses" viewBox="0 0 170 150">
-            <g class="glass glass--left"><g transform="rotate(14 50 80) translate(14 30)">
-              <path pathLength="1" d="M4 14c10-6 46-6 56 0-10 5-46 5-56 0z"/>
-              <path pathLength="1" d="M4 14c2 20 18 28 28 28s26-8 28-28"/>
-              <path pathLength="1" d="M10 23c14 4 30 4 44 0"/>
-              <path pathLength="1" d="M32 42c-1 18 1 32 0 50M16 96c6-5 26-5 32 0-6 3-26 3-32 0z"/>
-              <path pathLength="1" d="M32 54c-8-8-16-2-10 4 4 2 8-1 10-4 2-3 10-8 12-1 1 6-6 6-12 1M32 55c-4 9-8 15-14 21M32 55c4 9 9 13 14 19"/>
-            </g></g>
-            <g class="glass glass--right"><g transform="rotate(-14 120 80) translate(92 30)">
-              <path pathLength="1" d="M4 14c10-6 46-6 56 0-10 5-46 5-56 0z"/>
-              <path pathLength="1" d="M4 14c2 20 18 28 28 28s26-8 28-28"/>
-              <path pathLength="1" d="M10 23c14 4 30 4 44 0"/>
-              <path pathLength="1" d="M32 42c-1 18 1 32 0 50M16 96c6-5 26-5 32 0-6 3-26 3-32 0z"/>
-              <path pathLength="1" d="M32 54c-8-8-16-2-10 4 4 2 8-1 10-4 2-3 10-8 12-1 1 6-6 6-12 1M32 55c-4 9-8 15-14 21M32 55c4 9 9 13 14 19"/>
-            </g></g>
-            <path class="clink" pathLength="1" d="M85 26V12M74 30l-7-9M96 30l7-9"/>
-          </svg>
+          <!-- Two coupes clinking. Each glass is its own element so the clink is a cheap, GPU-composited rotation -->
+          <div class="doodle doodle--glasses">
+            <svg class="glass glass--left" viewBox="0 0 170 150">
+              <g transform="rotate(14 50 80) translate(14 30)">
+                <path pathLength="1" d="M4 14c10-6 46-6 56 0-10 5-46 5-56 0z"/>
+                <path pathLength="1" d="M4 14c2 20 18 28 28 28s26-8 28-28"/>
+                <path pathLength="1" d="M10 23c14 4 30 4 44 0"/>
+                <path pathLength="1" d="M32 42c-1 18 1 32 0 50M16 96c6-5 26-5 32 0-6 3-26 3-32 0z"/>
+                <path pathLength="1" d="M32 54c-8-8-16-2-10 4 4 2 8-1 10-4 2-3 10-8 12-1 1 6-6 6-12 1M32 55c-4 9-8 15-14 21M32 55c4 9 9 13 14 19"/>
+              </g>
+            </svg>
+            <svg class="glass glass--right" viewBox="0 0 170 150">
+              <g transform="rotate(-14 120 80) translate(92 30)">
+                <path pathLength="1" d="M4 14c10-6 46-6 56 0-10 5-46 5-56 0z"/>
+                <path pathLength="1" d="M4 14c2 20 18 28 28 28s26-8 28-28"/>
+                <path pathLength="1" d="M10 23c14 4 30 4 44 0"/>
+                <path pathLength="1" d="M32 42c-1 18 1 32 0 50M16 96c6-5 26-5 32 0-6 3-26 3-32 0z"/>
+                <path pathLength="1" d="M32 54c-8-8-16-2-10 4 4 2 8-1 10-4 2-3 10-8 12-1 1 6-6 6-12 1M32 55c-4 9-8 15-14 21M32 55c4 9 9 13 14 19"/>
+              </g>
+            </svg>
+            <svg class="clink" viewBox="0 0 170 150">
+              <path pathLength="1" d="M85 26V12M74 30l-7-9M96 30l7-9"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
