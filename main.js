@@ -191,6 +191,15 @@
       frag.appendChild(line);
     }
 
+    // The month's name sits at the top right of the zoomed-out view, sized for it, and scales with the grid
+    const fontSize = clamp(vw * 0.09, 30, 56) / startScale;
+    const header = document.createElement('div');
+    header.className = 'month-title';
+    header.textContent = MONTHS[month - 1];
+    header.style.cssText = `font-size:${fontSize}px;left:${cw / 2 + (vw / 2 - 20) / startScale}px;`
+      + `top:${ch / 2 - (top + ch / 2) / startScale + fontSize * 0.9}px`;
+    frag.appendChild(header);
+
     // Weeks run Sunday → Saturday from right to left, so a column's weekday is fixed
     for (let r = -rows; r <= rows; r++) {
       for (let c = -cols; c <= cols; c++) {
@@ -362,20 +371,10 @@
       run(el, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
         { duration: 1600, delay: 250 + Number(el.dataset.order) * 120, easing: ease });
     });
-    calendar.querySelectorAll('.day').forEach((el) => {
+    calendar.querySelectorAll('.day, .month-title').forEach((el) => {
       run(el, [{ opacity: 0 }, { opacity: 1 }],
         { duration: 800, delay: 900 + Math.random() * 1000, easing: 'ease-out' });
     });
-
-    // A faint month heading over the whole-month view, gone as the camera moves in
-    const title = $('#month-title');
-    title.textContent = MONTHS[month - 1];
-    run(title, [
-      { opacity: 0, transform: 'scale(0.96)' },
-      { opacity: 0.75, transform: 'scale(1)', offset: 0.35 },
-      { opacity: 0.75, transform: 'scale(1)', offset: 0.62 },
-      { opacity: 0, transform: 'scale(1.25)' },
-    ], { duration: 3000, delay: 600, easing: 'ease-in-out' });
 
     // The month stays in view long enough to read as a calendar, then the camera closes in on the wedding day
     run($('#zoom'), [{ transform: `scale(${geo.startScale})` }, { transform: 'scale(1)' }],
