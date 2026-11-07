@@ -118,9 +118,7 @@ body {
 
 .zoom { transform-origin: 50% calc(var(--top) + var(--ch) / 2); }
 
-/* Only the hand-drawn layer moves with the tilt, so only it gets its own GPU layer;
-   the zoom wrapper gets one just while the opening plays (see .intro-playing) */
-.layer--tilt { will-change: transform; }
+/* The zoom wrapper gets its own GPU layer just while the opening plays */
 .intro-playing .zoom { will-change: transform; }
 
 /* Layers are stacked full-screen; only the content itself should catch taps */
@@ -405,8 +403,8 @@ body {
 .doodle--ring {
   width: calc(var(--u) * 38);
   aspect-ratio: 1;
-  right: calc(var(--u) * -30);
-  top: max(calc(var(--u) * -46), calc(var(--top) * -1 + 4px));
+  right: calc(var(--u) * -23);
+  top: max(calc(var(--u) * -39), calc(var(--top) * -1 + 4px));
   transform: rotate(12deg);
 }
 .doodle--sparkles {
@@ -421,13 +419,13 @@ body {
   bottom: calc(var(--u) * 8);
   transform: rotate(-8deg);
 }
-/* Bottom left, beside the calendar button; sized in --u and anchored to the button's height
-   so it never runs off the bottom of a short phone screen */
+/* In the day before the wedding, standing low beside the wedding day's left border. On phones that
+   column is only partly on screen, so the drawing narrows to fit what is visible of it. */
 .doodle--us {
-  width: calc(var(--u) * 27);
+  width: min(calc(var(--u) * 34), calc((100vw - var(--cw)) / 2 - var(--u) * 2 - 12px));
   aspect-ratio: 468 / 741;
-  left: calc(var(--u) * -23);
-  top: calc(100% + var(--u) * 0.5 + 52px);
+  right: calc(100% + var(--u) * 2);
+  bottom: calc(var(--u) * 4);
 }
 
 /* ---------- Intro: hidden until main.js starts the sequence ---------- */

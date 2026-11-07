@@ -527,88 +527,6 @@
     return Promise.all(anims.map((a) => a.finished)).catch(() => {});
   }
 
-  // ---------- Depth effect ----------
-
-  const layers = [...document.querySelectorAll('[data-depth]')].map((el) => ({ el, depth: Number(el.dataset.depth) }));
-  const MAX_SHIFT = 14;
-  const tilt = { x: 0, y: 0 };
-  const shown = { x: 0, y: 0 };
-  let strength = 0;
-  let neutral = null;
-
-  const dpr = window.devicePixelRatio || 1;
-  const snap = (v) => Math.round(v * dpr) / dpr;
-
-  function frame() {
-    requestAnimationFrame(frame);
-    shown.x += (tilt.x - shown.x) * 0.06;
-    shown.y += (tilt.y - shown.y) * 0.06;
-    const k = MAX_SHIFT * strength;
-    for (const layer of layers) {
-      // Move in whole device pixels, and only by more than one, so sensor noise can't make thin lines shimmer
-      const x = -shown.x * layer.depth * k;
-      const y = -shown.y * layer.depth * k;
-      const step = 1.5 / dpr;
-      if (layer.x !== undefined && Math.abs(x - layer.x) < step && Math.abs(y - layer.y) < step) continue;
-      layer.x = snap(x);
-      layer.y = snap(y);
-      layer.el.style.transform = `translate3d(${layer.x}px, ${layer.y}px, 0)`;
-    }
-  }
-
-  function onOrientation(e) {
-    if (e.beta == null || e.gamma == null) return;
-    const angle = (screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0;
-    let x = e.gamma;
-    let y = e.beta;
-    if (angle === 90) { x = e.beta; y = -e.gamma; }
-    else if (angle === -90 || angle === 270) { x = -e.beta; y = e.gamma; }
-    else if (angle === 180) { x = -e.gamma; y = -e.beta; }
-    // The neutral pose follows slowly, so however the phone is held it settles back to centre
-    if (!neutral) neutral = { x, y };
-    neutral.x += (x - neutral.x) * 0.006;
-    neutral.y += (y - neutral.y) * 0.006;
-    // Average out the sensor's jitter before it reaches the layers
-    tilt.x += (clamp((x - neutral.x) / 16, -1, 1) - tilt.x) * 0.2;
-    tilt.y += (clamp((y - neutral.y) / 16, -1, 1) - tilt.y) * 0.2;
-  }
-
-  function onPointer(e) {
-    if (e.pointerType !== 'mouse') return;
-    tilt.x = clamp((e.clientX / geo.vw) * 2 - 1, -1, 1);
-    tilt.y = clamp((e.clientY / geo.vh) * 2 - 1, -1, 1);
-  }
-
-  function startDepth() {
-    const t0 = performance.now();
-    const ramp = (now) => {
-      strength = Math.min(1, (now - t0) / 900);
-      if (strength < 1) requestAnimationFrame(ramp);
-    };
-    requestAnimationFrame(ramp);
-    requestAnimationFrame(frame);
-    window.addEventListener('pointermove', onPointer, { passive: true });
-
-    const DOE = window.DeviceOrientationEvent;
-    if (!DOE) return;
-    if (typeof DOE.requestPermission !== 'function') {
-      window.addEventListener('deviceorientation', onOrientation);
-      return;
-    }
-    // iOS only grants motion access from a tap, so ask on the first touch anywhere on the page
-    const ask = (e) => {
-      // Never let the permission prompt swallow a tap on the calendar button
-      if (e.target.closest('a')) return;
-      document.removeEventListener('touchend', ask);
-      document.removeEventListener('click', ask);
-      DOE.requestPermission().then((state) => {
-        if (state === 'granted') window.addEventListener('deviceorientation', onOrientation);
-      }).catch(() => {});
-    };
-    document.addEventListener('touchend', ask);
-    document.addEventListener('click', ask);
-  }
-
   // ---------- Start ----------
 
   fillDetails();
@@ -652,7 +570,6 @@
       root.classList.remove('intro-playing');
       introDone = true;
       root.classList.add('alive');
-      startDepth();
     });
   });
 })();

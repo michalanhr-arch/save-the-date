@@ -34,7 +34,6 @@
         <div class="cell-frame calendar" id="calendar"></div>
       </div>
 
-      <!-- Text and grid stay still; only the hand-drawn layer below follows the phone's tilt -->
       <div class="layer">
         <div class="cell-frame">
           <section class="card" id="card">
@@ -114,7 +113,7 @@
         </div>
       </div>
 
-      <div class="layer layer--tilt" data-depth="1.1" aria-hidden="true">
+      <div class="layer" aria-hidden="true">
         <div class="cell-frame doodles">
           <canvas class="script" id="script"></canvas>
           <!-- Engagement ring; its rays are a separate element so their glint is composited -->
