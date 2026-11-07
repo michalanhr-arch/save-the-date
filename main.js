@@ -4,11 +4,11 @@
   // ---------- Wedding details: edit here ----------
   const WEDDING = {
     // Israel is still on summer time (UTC+3) at the end of October 2027
-    start: '2027-10-28T19:00:00+03:00',
+    start: '2027-10-27T19:30:00+03:00',
     // When false, the calendar entry is an all-day event and the hour is not shown
     timeConfirmed: true,
-    durationHours: 8, // 19:00 until 03:00
-    venue: 'אולם אירועים',
+    durationHours: 7.5, // 19:30 until 03:00
+    venue: 'צל החורש',
     // The venue's street address, as Google Maps knows it; it goes in the calendar event's location
     address: '',
     calendarTitle: 'החתונה של מיכל ונועם',
