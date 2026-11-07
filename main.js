@@ -429,8 +429,10 @@
       svg.querySelectorAll('path').forEach((path, j) => {
         const len = path.getTotalLength() + 1;
         path.style.strokeDasharray = `${len} ${len}`;
+        // Long lines (like the dancing couple's outline) take longer, at a similar pen speed
+        const k = path.ownerSVGElement.getBoundingClientRect().width / path.ownerSVGElement.viewBox.baseVal.width;
         run(path, [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-          { duration: 650, delay: doodlesAt + i * 300 + j * 130, easing: 'ease-in-out' });
+          { duration: clamp(len * k * 3, 450, 2600), delay: doodlesAt + i * 300 + j * 110, easing: 'ease-in-out' });
       });
     });
     run($('#below'), [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],

@@ -361,7 +361,8 @@ body {
 /* Idle motion once the intro is over: the ring glints, the glasses clink.
    Only whole elements are transformed, so the browser can animate them on the GPU. */
 .doodle--ring > svg,
-.doodle--glasses > svg {
+.doodle--glasses > svg,
+.doodle--us > svg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -408,8 +409,19 @@ body {
   84%, 100% { transform: translateY(-3px) scale(1.15); opacity: 0; }
 }
 
+/* The couple sways gently from their feet, as if dancing */
+.us { transform-origin: 50% 100%; }
+.alive .us {
+  animation: sway 2.6s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes sway {
+  from { transform: rotate(-2.5deg); }
+  to { transform: rotate(2.5deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .alive .rays, .alive .glass, .alive .clink { animation: none; }
+  .alive .rays, .alive .glass, .alive .clink, .alive .us { animation: none; }
 }
 
 .doodle--ring {
@@ -431,6 +443,15 @@ body {
   bottom: calc(var(--u) * 8);
   transform: rotate(-8deg);
 }
+/* Drawn as thin filled outlines; the stroke along both edges brings the line up to the other doodles' weight */
+.doodle--us {
+  width: calc(var(--u) * 22);
+  aspect-ratio: 468 / 741;
+  right: calc(var(--u) * -14);
+  top: calc(100% + var(--u) * 30);
+  stroke-width: 7.5;
+}
+
 .doodle--glasses {
   width: calc(var(--u) * 40);
   aspect-ratio: 170 / 150;
