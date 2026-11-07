@@ -435,3 +435,13 @@ body {
 @media (min-width: 700px) {
   .action { min-height: 44px; }
 }
+
+/* Phones show only a sliver of the column beside the wedding day, so there the couple is larger and
+   steps a little into the wedding day's cell, and the heart moves over to make room */
+@media (max-width: 699px) {
+  .doodle--us {
+    width: min(calc(var(--u) * 34), calc((100vw - var(--cw)) / 2 + var(--u) * 8 - 12px));
+    right: calc(100% - var(--u) * 8);
+  }
+  .doodle--heart { left: calc(var(--u) * 17); }
+}
