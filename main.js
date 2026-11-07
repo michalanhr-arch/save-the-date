@@ -8,7 +8,7 @@
     // When false, the calendar entry is an all-day event and the hour is not shown
     timeConfirmed: true,
     durationHours: 7.5, // 19:30 until 03:00
-    venue: 'צל החורש',
+    venue: 'צל החורש, בית ברל',
     // The venue's street address, as Google Maps knows it; it goes in the calendar event's location
     address: '',
     calendarTitle: 'החתונה של מיכל ונועם',
@@ -130,16 +130,23 @@
       <rect width='100%' height='100%' filter='url(#p)'/>
     </svg>`;
     // Bake the filter into a bitmap once; a live SVG filter would be re-rendered on every frame of the zoom
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 840;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) root.style.setProperty('--paper-texture', `url("${URL.createObjectURL(blob)}")`);
-      });
-    };
-    img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 840;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            root.style.setProperty('--paper-texture', `url("${URL.createObjectURL(blob)}")`);
+            root.classList.add('paper-ready');
+          }
+          resolve();
+        });
+      };
+      img.onerror = resolve;
+      img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    });
   }
 
 
@@ -391,6 +398,82 @@
     return { resize, write, finish };
   })();
 
+  // ---------- The dancing couple ----------
+
+  /** Draws the couple's lines in on a canvas, one after another, at a steady pen speed. */
+  const couple = (() => {
+    const canvas = $('#us');
+    const ctx = canvas.getContext('2d');
+    const source = $('#us-source');
+    const [vx, vy, vw, vh] = source.getAttribute('viewBox').split(/\s+/).map(Number);
+    // The drawing is thin filled outlines; stroking both edges brings it up to the other doodles' weight
+    const LINE = 7.5;
+    const lines = [...source.querySelectorAll('path')].map((el) => {
+      const path = new Path2D(el.getAttribute('d'));
+      return { path, len: el.getTotalLength ? el.getTotalLength() : 0 };
+    });
+    let progress = Infinity;
+    let schedule = [];
+
+    function draw() {
+      const { width: w, height: h } = canvas;
+      const k = w / vw;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      if (progress <= 0) return;
+      ctx.setTransform(k, 0, 0, k, -vx * k, -vy * k);
+      ctx.strokeStyle = getComputedStyle(root).getPropertyValue('--ink').trim();
+      ctx.lineWidth = LINE;
+      ctx.lineCap = ctx.lineJoin = 'round';
+      lines.forEach((line, i) => {
+        const f = progress === Infinity ? 1 : (progress - schedule[i].start) / schedule[i].time;
+        if (f <= 0) return;
+        ctx.setLineDash(f >= 1 || !line.len ? [] : [line.len * f, line.len * 2]);
+        ctx.stroke(line.path);
+      });
+    }
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const w = Math.round(canvas.clientWidth * dpr);
+      const h = Math.round(w * vh / vw);
+      if (!w || (w === canvas.width && h === canvas.height)) return;
+      canvas.width = w;
+      canvas.height = h;
+      draw();
+    }
+
+    function write(delay, duration) {
+      const total = lines.reduce((a, l) => a + l.len, 0);
+      let at = 0;
+      schedule = lines.map((l) => {
+        const slot = { start: at, time: Math.max(120, (l.len / total) * duration) };
+        at += slot.time * 0.85;
+        return slot;
+      });
+      const end = Math.max(...schedule.map((s) => s.start + s.time));
+      progress = 0;
+      draw();
+      return new Promise((resolve) => {
+        const t0 = performance.now() + delay;
+        const tick = (now) => {
+          progress = now - t0;
+          if (progress >= end) {
+            progress = Infinity;
+            draw();
+            resolve();
+            return;
+          }
+          if (progress > 0) draw();
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    }
+
+    return { resize, write, finish: () => { progress = Infinity; draw(); } };
+  })();
+
   function playIntro() {
     const ease = 'cubic-bezier(.65,0,.2,1)';
     const easeOut = 'cubic-bezier(.2,.7,.2,1)';
@@ -435,6 +518,7 @@
           { duration: clamp(len * k * 3, 450, 2600), delay: doodlesAt + i * 300 + j * 110, easing: 'ease-in-out' });
       });
     });
+    anims.push({ finished: couple.write(doodlesAt + 300, 2200) });
     run($('#below'), [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
       { duration: 900, delay: t + 1500, easing: easeOut });
 
@@ -452,21 +536,23 @@
   let strength = 0;
   let neutral = null;
 
-  let lastX = NaN;
-  let lastY = NaN;
+  const dpr = window.devicePixelRatio || 1;
+  const snap = (v) => Math.round(v * dpr) / dpr;
 
   function frame() {
     requestAnimationFrame(frame);
-    shown.x += (tilt.x - shown.x) * 0.08;
-    shown.y += (tilt.y - shown.y) * 0.08;
+    shown.x += (tilt.x - shown.x) * 0.06;
+    shown.y += (tilt.y - shown.y) * 0.06;
     const k = MAX_SHIFT * strength;
-    // Skip the style writes when nothing visibly moved
-    if (Math.abs(shown.x * k - lastX) < 0.02 && Math.abs(shown.y * k - lastY) < 0.02) return;
-    lastX = shown.x * k;
-    lastY = shown.y * k;
-    for (const { el, depth } of layers) {
-      // Nearer layers slide against the tilt, the paper slides with it
-      el.style.transform = `translate3d(${(-shown.x * depth * k).toFixed(2)}px, ${(-shown.y * depth * k).toFixed(2)}px, 0)`;
+    for (const layer of layers) {
+      // Move in whole device pixels, and only by more than one, so sensor noise can't make thin lines shimmer
+      const x = -shown.x * layer.depth * k;
+      const y = -shown.y * layer.depth * k;
+      const step = 1.5 / dpr;
+      if (layer.x !== undefined && Math.abs(x - layer.x) < step && Math.abs(y - layer.y) < step) continue;
+      layer.x = snap(x);
+      layer.y = snap(y);
+      layer.el.style.transform = `translate3d(${layer.x}px, ${layer.y}px, 0)`;
     }
   }
 
@@ -482,8 +568,9 @@
     if (!neutral) neutral = { x, y };
     neutral.x += (x - neutral.x) * 0.006;
     neutral.y += (y - neutral.y) * 0.006;
-    tilt.x = clamp((x - neutral.x) / 16, -1, 1);
-    tilt.y = clamp((y - neutral.y) / 16, -1, 1);
+    // Average out the sensor's jitter before it reaches the layers
+    tilt.x += (clamp((x - neutral.x) / 16, -1, 1) - tilt.x) * 0.2;
+    tilt.y += (clamp((y - neutral.y) / 16, -1, 1) - tilt.y) * 0.2;
   }
 
   function onPointer(e) {
@@ -527,11 +614,12 @@
   fillDetails();
   fillLinks();
   tickCountdown();
-  paintPaper();
+  const paperReady = paintPaper();
   paintInkGrain();
   measure();
   buildCalendar();
   script.resize();
+  couple.resize();
 
   let introDone = false;
   let resizeTimer;
@@ -540,18 +628,22 @@
     resizeTimer = setTimeout(() => {
       measure();
       script.resize();
+      couple.resize();
+  couple.resize();
       if (introDone) buildCalendar();
     }, 150);
   });
 
+  // Start once the fonts and the paper are ready, so nothing swaps in mid-animation
   const fontsReady = Promise.race([
-    document.fonts ? document.fonts.ready : Promise.resolve(),
+    Promise.all([document.fonts ? document.fonts.ready : null, paperReady]),
     new Promise((r) => setTimeout(r, 1500)),
   ]);
 
   fontsReady.then(() => {
     if (reducedMotion) {
       script.finish();
+      couple.finish();
       root.classList.remove('intro-pending');
       introDone = true;
       return;

@@ -96,11 +96,19 @@ body {
 .paper {
   position: absolute;
   inset: -48px;
-  background-color: var(--paper);
-  background-image: var(--paper-texture), radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(120, 108, 80, 0.10));
-  background-size: 420px 420px, 100% 100%;
-  background-blend-mode: multiply, normal;
+  background: var(--paper) radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(120, 108, 80, 0.10));
 }
+/* The texture is baked by main.js a moment after load; fade it in rather than letting it pop */
+.paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--paper-texture) 0 0 / 420px 420px;
+  mix-blend-mode: multiply;
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+.paper-ready .paper::after { opacity: 1; }
 
 .zoom,
 .layer {
@@ -358,11 +366,10 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* Idle motion once the intro is over: the ring glints, the glasses clink.
+/* Idle motion once the intro is over: the ring glints, the couple sways.
    Only whole elements are transformed, so the browser can animate them on the GPU. */
 .doodle--ring > svg,
-.doodle--glasses > svg,
-.doodle--us > svg {
+.doodle--us > canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -380,35 +387,6 @@ body {
   50% { transform: scale(1.1); opacity: 1; }
 }
 
-/* Each glass pivots on the foot of its stem */
-.glass--left { transform-origin: 20.6% 82.5%; }
-.glass--right { transform-origin: 79.4% 82.5%; }
-.alive .glass {
-  animation: clink-left 3.2s ease-in-out infinite;
-  will-change: transform;
-}
-.alive .glass--right { animation-name: clink-right; }
-@keyframes clink-left {
-  0%, 50%, 100% { transform: rotate(0); }
-  64%, 70% { transform: rotate(7deg); }
-  86% { transform: rotate(0); }
-}
-@keyframes clink-right {
-  0%, 50%, 100% { transform: rotate(0); }
-  64%, 70% { transform: rotate(-7deg); }
-  86% { transform: rotate(0); }
-}
-.clink { transform-origin: 50% 20%; }
-.alive .clink {
-  animation: clink-burst 3.2s ease-out infinite;
-  will-change: transform, opacity;
-}
-@keyframes clink-burst {
-  0%, 62% { transform: translateY(4px) scale(0.6); opacity: 0; }
-  67% { transform: translateY(0) scale(1.05); opacity: 1; }
-  84%, 100% { transform: translateY(-3px) scale(1.15); opacity: 0; }
-}
-
 /* The couple sways gently from their feet, as if dancing */
 .us { transform-origin: 50% 100%; }
 .alive .us {
@@ -421,7 +399,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .alive .rays, .alive .glass, .alive .clink, .alive .us { animation: none; }
+  .alive .rays, .alive .us { animation: none; }
 }
 
 .doodle--ring {
@@ -443,21 +421,13 @@ body {
   bottom: calc(var(--u) * 8);
   transform: rotate(-8deg);
 }
-/* Drawn as thin filled outlines; the stroke along both edges brings the line up to the other doodles' weight */
+/* Bottom left, beside the calendar button; sized in --u and anchored to the button's height
+   so it never runs off the bottom of a short phone screen */
 .doodle--us {
-  width: calc(var(--u) * 22);
+  width: calc(var(--u) * 27);
   aspect-ratio: 468 / 741;
-  right: calc(var(--u) * -14);
-  top: calc(100% + var(--u) * 30);
-  stroke-width: 7.5;
-}
-
-.doodle--glasses {
-  width: calc(var(--u) * 40);
-  aspect-ratio: 170 / 150;
-  left: calc(var(--u) * -24);
-  top: calc(100% + var(--u) * 44);
-  stroke-width: 2.4;
+  left: calc(var(--u) * -23);
+  top: calc(100% + var(--u) * 0.5 + 52px);
 }
 
 /* ---------- Intro: hidden until main.js starts the sequence ---------- */
