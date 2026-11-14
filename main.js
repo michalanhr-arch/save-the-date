@@ -22,8 +22,8 @@
       months: ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'],
       weekStartsOn: 0, // Sunday
       dateLine: (weekday, date, time) => `${weekday}, ${date}${time ? ` | ${time}` : ''}`,
-      calendarTitle: 'החתונה של מיכל ונועם',
-      calendarDetails: 'מיכל ונועם מתחתנים! נתראה שם.',
+      calendarTitle: 'החתונה של מיכל ונועם 🎉',
+      calendarDetails: 'מצפים לראותכם בחתונת השנה!',
       today: 'היום זה קורה!',
       after: 'התחתנו! תודה שחגגתם איתנו',
     },
@@ -33,8 +33,8 @@
       months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
       weekStartsOn: 1, // Monday
       dateLine: (weekday, date, time) => `${weekday}, ${date}${time ? `\n${time} h` : ''}`,
-      calendarTitle: 'La boda de Michal y Noam',
-      calendarDetails: '¡Michal y Noam se casan! Nos vemos allí.',
+      calendarTitle: 'La boda de Michal y Noam 🎉',
+      calendarDetails: '¡Os esperamos en la boda del año!',
       today: '¡Hoy es el gran día!',
       after: '¡Nos casamos! Gracias por celebrar con nosotros',
     },
@@ -48,7 +48,11 @@
 
   const $ = (sel) => document.querySelector(sel);
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ?preview renders the finished card, centred and without the countdown, for the link-preview image
+  // (tools/make-previews.js screenshots it)
+  const previewMode = new URLSearchParams(location.search).has('preview');
+  if (previewMode) root.classList.add('preview');
+  const reducedMotion = previewMode || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // The calendar date is read from the string itself so the viewer's time zone never shifts it
   const [year, month, day] = WEDDING.start.slice(0, 10).split('-').map(Number);
@@ -212,11 +216,17 @@
   function measure() {
     const vw = window.innerWidth;
     const vh = Math.max(window.innerHeight, 520);
-    const cw = Math.round(vw < 700 ? Math.min(vw * 0.66, vh * 0.42) : Math.min(440, vw * 0.36, vh * 0.38));
+    let cw = Math.round(vw < 700 ? Math.min(vw * 0.66, vh * 0.42) : Math.min(440, vw * 0.36, vh * 0.38));
     const u = cw / 100;
-    const ch = Math.round(clamp(vh * 0.47, 128 * u, 165 * u));
+    let ch = Math.round(clamp(vh * 0.47, 128 * u, 165 * u));
     const belowNeeded = 45 * u + 62;
-    const top = Math.round(clamp(vh - ch - belowNeeded, vh * 0.06, vh * 0.2));
+    let top = Math.round(clamp(vh - ch - belowNeeded, vh * 0.06, vh * 0.2));
+    if (previewMode) {
+      // Sit low enough to leave the ring room above the card
+      cw = Math.round(vh * 0.56);
+      ch = Math.round(cw * 1.28);
+      top = vh - ch - 24;
+    }
     // The intro starts zoomed out far enough to read as a month calendar
     // The month's heading stands on the top line of the week before the wedding, with blank paper above it
     const titleSize = Math.min(clamp(vw * 0.13, 40, 72), vh * 0.075);

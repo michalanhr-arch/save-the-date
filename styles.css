@@ -475,3 +475,6 @@ body {
 [lang="es"] .countdown small { font-size: calc(var(--u) * 3.9); }
 [lang="es"] .details__date { white-space: pre-line; } /* the hour goes on its own line */
 [lang="es"] .month-title { font-weight: 200; letter-spacing: 0.12em; }
+
+/* Link-preview rendering (?preview): just the card, no countdown */
+.preview .below { display: none; }

@@ -19,7 +19,10 @@ REPLACEMENTS = [
     ('content="מיכל ונועם – Save the Date"', 'content="Michal y Noam – Save the Date"'),
     ('content="מתחתנים ב־27.10.2027. שמרו את התאריך!"', 'content="Nos casamos el 27.10.2027. ¡Reserva la fecha!"'),
     (f'<meta property="og:url" content="{SITE}">', f'<meta property="og:url" content="{SITE}es/">'),
-    (f'content="{SITE}assets/og.jpg"', f'content="{SITE}assets/og-es.jpg"'),
+    ('<meta property="og:locale" content="he_IL">', '<meta property="og:locale" content="es_ES">'),
+    (f'content="{SITE}assets/og.jpg?v=', f'content="{SITE}assets/og-es.jpg?v='),
+    ('content="Save the Date – החתונה של מיכל ונועם, 27.10.2027"',
+     'content="Save the Date – La boda de Michal y Noam, 27.10.2027"'),
     ('aria-label="Save the Date – מיכל ונועם"', 'aria-label="Save the Date – Michal y Noam"'),
     ('<span class="lead">החתונה של</span>', '<span class="lead">La boda de</span>'),
     # Two lines, broken where a reader would pause
