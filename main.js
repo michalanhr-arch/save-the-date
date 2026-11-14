@@ -122,7 +122,24 @@
     });
     // render?action=TEMPLATE lands on the agenda in mobile browsers; eventedit opens the new-event form everywhere.
     // The slash between the dates must stay literal for Google to read them.
-    $('#gcal').href = `https://calendar.google.com/calendar/r/eventedit?${gcal.toString().replace('%2F', '/')}`;
+    const google = `https://calendar.google.com/calendar/r/eventedit?${gcal.toString().replace('%2F', '/')}`;
+    const link = $('#gcal');
+    const ua = navigator.userAgent;
+    const iOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (iOS) {
+      // The phone's own calendar, with reminders 3 hours and a week before (tools/make-calendar.py).
+      // Google sign-in is blocked inside WhatsApp's and Instagram's browsers, and most iPhones use Apple's calendar.
+      link.href = `/assets/wedding-${root.lang === 'es' ? 'es' : 'he'}.ics`;
+      link.removeAttribute('target');
+    } else if (/Android/.test(ua)) {
+      // Open Google Calendar in Chrome, where the guest is signed in, rather than in an app's built-in browser
+      const rest = google.replace(/^https:\/\//, '');
+      link.href = `intent://${rest}#Intent;scheme=https;package=com.android.chrome;`
+        + `S.browser_fallback_url=${encodeURIComponent(google)};end`;
+      link.removeAttribute('target');
+    } else {
+      link.href = google;
+    }
   }
 
   // ---------- Countdown ----------

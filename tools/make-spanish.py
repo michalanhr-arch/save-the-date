@@ -40,7 +40,7 @@ REPLACEMENTS = [
               <span class="countdown__unit"><b data-unit="hours">00</b><small>horas</small></span>
               <span class="countdown__unit"><b data-unit="minutes">00</b><small>minutos</small></span>
               <span class="countdown__unit"><b data-unit="seconds">00</b><small>segundos</small></span>'''),
-    ("                הוספה ליומן Google\n", "                Añadir al calendario\n"),
+    ("                הוספה ליומן\n", "                Añadir al calendario\n"),
     ('aria-label="הסרטון שלנו באינסטגרם"', 'aria-label="Nuestro vídeo en Instagram"'),
     # The page lives one folder down, so shared files are one level up
     ('href="assets/', 'href="../assets/'),
