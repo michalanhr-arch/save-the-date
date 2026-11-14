@@ -445,3 +445,24 @@ body {
   }
   .doodle--heart { left: calc(var(--u) * 17); }
 }
+
+/* ---------- Spanish page (es/index.html): Latin text set in Montserrat ---------- */
+
+:root[lang="es"] { --font-hebrew: "Montserrat", sans-serif; }
+/* The card keeps the Hebrew page's right-aligned layout, clear of the slanted "Save the Date" */
+[lang="es"] .card { text-align: right; }
+[lang="es"] .lead {
+  margin-top: calc(var(--u) * 25);
+  font-size: calc(var(--u) * 8);
+}
+[lang="es"] .names {
+  font-size: calc(var(--u) * 13.5);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+[lang="es"] .details { font-size: calc(var(--u) * 5.3); }
+/* Spanish unit names are longer than the Hebrew ones */
+[lang="es"] .countdown b { font-size: calc(var(--u) * 10); }
+[lang="es"] .countdown small { font-size: calc(var(--u) * 3.9); }
+[lang="es"] .details__date { white-space: pre-line; } /* the hour goes on its own line */
+[lang="es"] .month-title { font-weight: 200; letter-spacing: 0.12em; }

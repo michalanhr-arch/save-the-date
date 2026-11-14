@@ -8,20 +8,46 @@
     // When false, the calendar entry is an all-day event and the hour is not shown
     timeConfirmed: true,
     durationHours: 7.5, // 19:30 until 03:00
-    venue: 'צל החורש, בית ברל',
-    // The venue's street address, as Google Maps knows it; it goes in the calendar event's location
+    // The venue as Google Maps knows it; it goes in the calendar event's location in every language
+    location: 'צל החורש, בית ברל',
+    // The venue's street address, added to the calendar event's location when known
     address: '',
-    calendarTitle: 'החתונה של מיכל ונועם',
-    calendarDetails: 'מיכל ונועם מתחתנים! נתראה שם.',
   };
 
-  const WEEKDAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-  const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  // ---------- Wording per language (the page's <html lang> picks one) ----------
+  const TEXTS = {
+    he: {
+      venue: 'צל החורש, בית ברל',
+      weekdays: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
+      months: ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'],
+      weekStartsOn: 0, // Sunday
+      dateLine: (weekday, date, time) => `${weekday}, ${date}${time ? ` | ${time}` : ''}`,
+      calendarTitle: 'החתונה של מיכל ונועם',
+      calendarDetails: 'מיכל ונועם מתחתנים! נתראה שם.',
+      today: 'היום זה קורה!',
+      after: 'התחתנו! תודה שחגגתם איתנו',
+    },
+    es: {
+      venue: 'Tzel HaJoresh, Beit Berl',
+      weekdays: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+      months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+      weekStartsOn: 1, // Monday
+      dateLine: (weekday, date, time) => `${weekday}, ${date}${time ? `\n${time} h` : ''}`,
+      calendarTitle: 'La boda de Michal y Noam',
+      calendarDetails: '¡Michal y Noam se casan! Nos vemos allí.',
+      today: '¡Hoy es el gran día!',
+      after: '¡Nos casamos! Gracias por celebrar con nosotros',
+    },
+  };
+
+  const root = document.documentElement;
+  const T = TEXTS[root.lang] || TEXTS.he;
+  // Hebrew weeks run right to left; Spanish ones left to right
+  const ltr = root.dir === 'ltr';
   const DAY_MS = 86400000;
 
   const $ = (sel) => document.querySelector(sel);
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const root = document.documentElement;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // The calendar date is read from the string itself so the viewer's time zone never shifts it
@@ -48,6 +74,16 @@
   }
 
   function hebrewDate(date) {
+    if (root.lang === 'es') {
+      try {
+        // e.g. "26 de Tishri de 5788"
+        return new Intl.DateTimeFormat('es-u-ca-hebrew', {
+          day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+        }).format(date).replace(/\s*AM$/, '').replace(/de (\p{L})/u, (m, c) => `de ${c.toUpperCase()}`);
+      } catch {
+        return '';
+      }
+    }
     try {
       const parts = new Intl.DateTimeFormat('he-u-ca-hebrew', {
         day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
@@ -61,11 +97,10 @@
 
   function fillDetails() {
     const pad = (n) => String(n).padStart(2, '0');
-    let dateText = `${WEEKDAYS[weddingWeekday]}, ${pad(day)}.${pad(month)}.${year}`;
-    if (WEDDING.timeConfirmed) dateText += ` | ${WEDDING.start.slice(11, 16)}`;
-    $('[data-field="date"]').textContent = dateText;
+    const time = WEDDING.timeConfirmed ? WEDDING.start.slice(11, 16) : '';
+    $('[data-field="date"]').textContent = T.dateLine(T.weekdays[weddingWeekday], `${pad(day)}.${pad(month)}.${year}`, time);
     $('[data-field="hebrewDate"]').textContent = hebrewDate(weddingDay);
-    $('[data-field="venue"]').textContent = WEDDING.venue;
+    $('[data-field="venue"]').textContent = T.venue;
   }
 
   function fillLinks() {
@@ -75,10 +110,10 @@
       ? `${stamp(weddingTime)}/${stamp(weddingTime + WEDDING.durationHours * 3600000)}`
       : `${ymd(weddingDay)}/${ymd(new Date(weddingDay.getTime() + DAY_MS))}`;
     const gcal = new URLSearchParams({
-      text: WEDDING.calendarTitle,
+      text: T.calendarTitle,
       dates,
-      location: [WEDDING.venue, WEDDING.address].filter(Boolean).join(', '),
-      details: WEDDING.calendarDetails,
+      location: [WEDDING.location, WEDDING.address].filter(Boolean).join(', '),
+      details: T.calendarDetails,
       ctz: 'Asia/Jerusalem',
     });
     // render?action=TEMPLATE lands on the agenda in mobile browsers; eventedit opens the new-event form everywhere.
@@ -98,7 +133,7 @@
       const done = $('#countdown-done');
       countdownEl.hidden = true;
       done.hidden = false;
-      done.textContent = left > -DAY_MS ? 'היום זה קורה!' : 'התחתנו! תודה שחגגתם איתנו';
+      done.textContent = left > -DAY_MS ? T.today : T.after;
       return;
     }
     const s = Math.floor(left / 1000);
@@ -230,7 +265,7 @@
     const fontSize = titleSize / startScale;
     const header = document.createElement('div');
     header.className = inkGrain ? 'month-title textured' : 'month-title';
-    header.textContent = MONTHS[month - 1];
+    header.textContent = T.months[month - 1];
     const viewRight = cw / 2 + vw / 2 / startScale;
     const columnEdge = Math.floor((viewRight - 8 / startScale) / cw) * cw;
     header.style.cssText = `font-size:${fontSize}px;left:${columnEdge - cw * 0.05}px;top:${pageTop - fontSize * 0.25}px`;
@@ -240,12 +275,14 @@
     print.className = 'print';
     print.appendChild(header);
 
-    // Weeks run Sunday → Saturday from right to left, so a column's weekday is fixed
+    // Each column is a fixed weekday: the week's first day is rightmost in Hebrew, leftmost in Spanish
+    const weddingColumn = (weddingWeekday - T.weekStartsOn + 7) % 7;
     for (let r = -1; r <= rows; r++) {
       for (let c = -cols; c <= cols; c++) {
-        const weekday = weddingWeekday - c;
-        if (weekday < 0 || weekday > 6) continue;
-        const date = new Date(weddingDay.getTime() + (r * 7 - c) * DAY_MS);
+        const offset = ltr ? c : -c; // days from the wedding along the week
+        const column = weddingColumn + offset;
+        if (column < 0 || column > 6) continue;
+        const date = new Date(weddingDay.getTime() + (r * 7 + offset) * DAY_MS);
         const cell = document.createElement('div');
         cell.className = 'day';
         if (r === 0 && c === 0) cell.classList.add('day--wedding');
@@ -255,7 +292,7 @@
         cell.textContent = date.getUTCDate();
         if (date.getUTCDate() === 1) {
           const label = document.createElement('small');
-          label.textContent = MONTHS[date.getUTCMonth()];
+          label.textContent = T.months[date.getUTCMonth()];
           cell.appendChild(label);
         }
         print.appendChild(cell);
