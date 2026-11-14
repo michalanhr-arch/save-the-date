@@ -449,8 +449,17 @@ body {
 /* ---------- Spanish page (es/index.html): Latin text set in Montserrat ---------- */
 
 :root[lang="es"] { --font-hebrew: "Montserrat", sans-serif; }
-/* The card keeps the Hebrew page's right-aligned layout, clear of the slanted "Save the Date" */
-[lang="es"] .card { text-align: right; }
+/* Left-aligned text moves the heart to the right, and on phones keeps the couple out of the cell */
+[lang="es"] .doodle--heart {
+  left: auto;
+  right: calc(var(--u) * 7);
+}
+@media (max-width: 699px) {
+  [lang="es"] .doodle--us {
+    width: min(calc(var(--u) * 34), calc((100vw - var(--cw)) / 2 - var(--u) * 2 - 12px));
+    right: calc(100% + var(--u) * 2);
+  }
+}
 [lang="es"] .lead {
   margin-top: calc(var(--u) * 25);
   font-size: calc(var(--u) * 8);
