@@ -309,9 +309,9 @@ body {
 .actions {
   margin-top: calc(var(--u) * 7);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: calc(var(--u) * 3);
+  gap: 6px;
 }
 
 .action {
@@ -319,7 +319,7 @@ body {
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  padding: 0 16px 0 18px;
+  padding: 0 14px 0 16px;
   border: 1.5px solid var(--ink);
   border-radius: 999px;
   color: var(--ink);
@@ -340,6 +340,17 @@ body {
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+/* A round button holding only an icon, the same height as the calendar button */
+.action--icon {
+  justify-content: center;
+  width: 42px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.action--icon svg {
+  width: 20px;
+  height: 20px;
 }
 .action:hover,
 .action:active {
@@ -434,6 +445,7 @@ body {
 
 @media (min-width: 700px) {
   .action { min-height: 44px; }
+  .action--icon { width: 44px; }
 }
 
 /* Phones show only a sliver of the column beside the wedding day, so there the couple is larger and
@@ -478,3 +490,10 @@ body {
 
 /* Link-preview rendering (?preview): just the card, no countdown */
 .preview .below { display: none; }
+/* "Añadir al calendario" is longer than the Hebrew label; keep it and the Instagram button inside the cell */
+[lang="es"] .action {
+  gap: 6px;
+  font-size: max(13px, calc(var(--u) * 5));
+  padding: 0 11px 0 12px;
+}
+[lang="es"] .action--icon { padding: 0; }
