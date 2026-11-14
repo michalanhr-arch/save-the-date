@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SITE = "https://michalanhr-arch.github.io/save-the-date/"
+SITE = "https://michalandnoam.com/"
 
 REPLACEMENTS = [
     ('<html lang="he" dir="rtl">', '<html lang="es" dir="ltr">'),
